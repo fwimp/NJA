@@ -6,6 +6,8 @@ import skimage.io as io
 from skimage.morphology import skeletonize, medial_axis
 # from skimage.filters import gaussian
 from skimage.color import rgb2gray
+from skimage.filters import gaussian
+from skimage.measure import regionprops
 # from skimage.feature import corner_harris, corner_peaks
 # from scipy.spatial import KDTree
 # from skimage.segmentation import active_contour
@@ -14,6 +16,8 @@ from copy import deepcopy
 from tqdm import tqdm
 import multiprocessing
 # from os import path
+
+# TODO: Add docstrings for all methods and funcs
 
 
 dirs = np.array(["NW", "N", "NE", "W", None, "E", "SW", "S", "SE"])
@@ -301,7 +305,11 @@ class NJAEdge:
 class NJANet:
     def __init__(self, image):
         self.image = image
+        self.blurred = None
         self.skel = None
+        self.centroid = None
+        self.contour_centroids = None
+        self.basenode = None
         self.nodes = {}
         self.edges = {}
 
@@ -310,6 +318,32 @@ class NJANet:
 
     def skeletonize(self):
         self.skel = skeletonize(self.image)
+        return self
+    
+    def generate_blurred(self, sigma=30):
+        self.blurred = gaussian(self.image, sigma, preserve_range=True)
+        return self
+    
+    def find_centroid(self):
+        region = regionprops(self.image.astype(np.uint8))[0]
+        self.centroid = region.centroid
+        return self
+        
+    @staticmethod
+    def find_region_asymmetry(blurred, centroid, threshold):
+        thresholded = blurred > threshold
+        region = regionprops(thresholded.astype(np.uint8))[0]
+        return region.centroid
+
+    def calculate_contour_centroids(self, contours=128):
+        # Fulfil requirements
+        if self.blurred is None:
+            self.generate_blurred()
+        if self.centroid is None:
+            self.find_centroid()
+            
+        threshes = np.linspace(0.0,np.amax(self.blurred),contours+1)[:-1]
+        self.contour_centroids = np.array([self.find_region_asymmetry(self.blurred, self.centroid, x) for x in threshes])
         return self
 
     def find_nodes(self):
@@ -328,6 +362,24 @@ class NJANet:
         for x in tqdm(self.nodes.values(), bar_format=" Finding Dirs: {l_bar}{bar}{r_bar}"):
             x.find_directions()
         return self
+    
+    @property
+    def onenodes(self):
+        return len([x for x in self.nodes.values() if x.juncs==1])
+    
+    def find_basenode(self, target = None):
+        if self.contour_centroids is None:
+            self.calculate_contour_centroids()
+        if target is None:
+            target = self.contour_centroids[-1]
+
+        tnodes = np.array(list(self.nodes.keys()))
+        self.basenode = self.nodes[tuple(tnodes[np.argmin((np.linalg.norm(tnodes - target, ord=2, axis=1)))])]
+        return self
+    
+    def basenode_to_roottip_distances(self):
+        return np.linalg.norm(np.array([x.position for x in self.nodes.values() if x.juncs==1]) - self.basenode.position, ord=2, axis=1)
+        
 
     def trace_paths(self):
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
