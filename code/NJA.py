@@ -20,6 +20,7 @@ import multiprocessing
 # TODO: Add docstrings for all methods and funcs
 
 
+# TODO: Document global dicts
 dirs = np.array(["NW", "N", "NE", "W", None, "E", "SW", "S", "SE"])
 dir_deltas = np.array([(-1,-1), (-1,0), (-1,1), (0,-1), (0,0), (0,1), (1,-1), (1,0), (1,1)])
 revdirs = list(reversed(dirs))
@@ -31,6 +32,17 @@ for x in dir_lookup:
 
 
 def get_3x3(image, y, x, flatten=False):
+    """Get surrounding pixels of a location from a binarised image.
+    
+    Args:
+        image (numpy.array): the image to analyse
+        y (int): y coordinate of the pixel
+        x (int): x coordinate of the pixel
+        flatten : Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.
+    
+    Returns:
+        numpy.array: 3x3 submatrix
+    """
     edgedict = {
         "top": [[0, 2, 1, 2], [1, 0]],  # Get a 3x2 matrix, then overlay that over point [r=1, c=0] on a 3x3 zeros mat
         "bottom": [[1, 1, 1, 2], [0, 0]],
@@ -74,13 +86,40 @@ def get_3x3(image, y, x, flatten=False):
         return finalmat
 
 
-def detect_junc(image, y, x, flatten=False):
+def detect_junc(image, y: int, x: int, flatten=False) -> tuple:
+    """Detect number of junctions from a pixel based on the surrounding pixels in an image.
+    
+    Args:
+        image (numpy.array): the image to analyse
+        y (int): y coordinate of the pixel
+        x (int): x coordinate of the pixel
+        flatten : Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.
+    
+    Returns:
+        tuple: (Submatrix, Num of junctions)
+    """
     submat = get_3x3(image, y, x, flatten)
     submat[1][1] = False
     return submat, np.count_nonzero(submat.flatten())
 
 
 def fmt_sm(submat, off="⬛", on="🟧", here="🟥"):
+    """Format a 3x3 boolean submatrix using UTF-8 characters.
+    
+    For example:\n
+    ⬛⬛⬛\n
+    🟧🟥⬛\n
+    ⬛🟧🟧
+    
+    Args:
+        submat (ndarray): the image to analyse
+        off (str): Character to represent False pixels
+        on (str): Character to represent False pixels
+        here (str) : Character to represent the current location
+    
+    Returns:
+        str: Formatted string representation
+    """
     formatted = np.repeat([off], 9).reshape([3, 3])
     formatted[submat] = on
     formatted[1, 1] = here
@@ -89,9 +128,23 @@ def fmt_sm(submat, off="⬛", on="🟧", here="🟥"):
 
 
 def trace_path(startpoint, direction, skel, print_journey=False, return_journey=False):
+    """Trace the path between two junctions over a skeletonised image.
+
+    Traces the path from a starting point on a skeletonised image along white pixels starting in a given direction until
+    another junction is reached.
+
+    Args:
+        startpoint (list): A list specifying the startpoint and its context [position, surround, juncs, None] (probably needs a refactor at some point)
+        direction (str): The direction to leave the starting pixel (captialised cardinal or ordinal directions, i.e. "N" or "SW")
+        skel (numpy.array): Skeletonised image to traverse
+        print_journey (bool): Whether to print the journey taken to the console. Defaults to False.
+        return_journey (bool): Whether to return the journey taken. Defaults to False.
+
+    Returns:
+        tuple: (endpoint, path length, [optionally, an array of the locations traversed during the trace])
+        """
     if print_journey:
         print(fmt_sm(startpoint[1]))
-    endloc = None
     # Init tracking set of places we've been
     curr_loc, curr_mat, curr_juncs, _ = deepcopy(startpoint)
     previously_visited = set()
@@ -151,6 +204,21 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
 
 
 def breadth_first(uid, candidates, net, threshold=2, timeout=100):
+    """Find all nodes connected to the candidate by journeys over edges of a length <= threshold
+    
+    Perform an efficient breadth-first search to find all nodes in a :class:`NJA.NJANet` network connected to a candidate :class:`NJA.NJANode` 
+    by taking a path consisting of only edges shorter or equal to the threshold distance.
+    
+    Args:
+        uid (tuple): The uid of the candidate node
+        candidates (set): A set of candidate node uids (usually ones that have an edge of length <= threshold connected to them)
+        net (:class:`NJA.NJANet`): The full network object
+        threshold (int): The threshold distance for each jump of the traversal. Defaults to 2.
+        timeout (int) : The number of jumps to take before abandoning a search. Defaults to 100.
+    
+    Returns:
+        set: The set of all node uids connected with the candidate node
+    """
     finalset = {uid}
     prevset = {uid}
     counter = 0
@@ -330,7 +398,7 @@ class NJANet:
         return self
         
     @staticmethod
-    def find_region_asymmetry(blurred, centroid, threshold):
+    def find_region_asymmetry(blurred, threshold):
         thresholded = blurred > threshold
         region = regionprops(thresholded.astype(np.uint8))[0]
         return region.centroid
@@ -342,8 +410,8 @@ class NJANet:
         if self.centroid is None:
             self.find_centroid()
             
-        threshes = np.linspace(0.0,np.amax(self.blurred),contours+1)[:-1]
-        self.contour_centroids = np.array([self.find_region_asymmetry(self.blurred, self.centroid, x) for x in threshes])
+        threshes = np.linspace(0.0, np.amax(self.blurred), contours+1)[:-1]
+        self.contour_centroids = np.array([self.find_region_asymmetry(self.blurred, x) for x in threshes])
         return self
 
     def find_nodes(self):
@@ -365,9 +433,9 @@ class NJANet:
     
     @property
     def onenodes(self):
-        return len([x for x in self.nodes.values() if x.juncs==1])
+        return len([x for x in self.nodes.values() if x.juncs == 1])
     
-    def find_basenode(self, target = None):
+    def find_basenode(self, target=None):
         if self.contour_centroids is None:
             self.calculate_contour_centroids()
         if target is None:
@@ -378,12 +446,12 @@ class NJANet:
         return self
     
     def basenode_to_roottip_distances(self):
-        return np.linalg.norm(np.array([x.position for x in self.nodes.values() if x.juncs==1]) - self.basenode.position, ord=2, axis=1)
-        
+        return np.linalg.norm(np.array([x.position for x in self.nodes.values() if x.juncs == 1]) - self.basenode.position, ord=2, axis=1)
 
     def trace_paths(self):
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
-        outlist = []
+        # outlist = []
+        traceout = None
         for x in tqdm(self.nodes.values(), bar_format="Tracing Paths: {l_bar}{bar}{r_bar}"):
             # Loop through output directions
             for y in x.dirs:
@@ -407,8 +475,8 @@ class NJANet:
     def _multi_trace_path(*args):
         # print(args[0])
         try:
-            result = trace_path(*args, print_journey=False, return_journey=True)
-            return result
+            result = trace_path(*args[1:], print_journey=False, return_journey=True)
+            return args[0], result
         except ValueError:
             return None
 
@@ -416,15 +484,11 @@ class NJANet:
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
         cpus = multiprocessing.cpu_count() - 1
 
-        var_list = [[[x.position, x.surround, x.juncs, None], y, self.skel] for x in self.nodes.values() for y in x.dirs]
+        var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel] for x in self.nodes.values() for y in x.dirs]
         chunksize = int(np.ceil(len(var_list) / cpus))
-        print(chunksize)
+        # print(chunksize)
         chunksize = None
 
-        # print(var_list[0])
-        # for x in var_list:
-        #     result = self._multi_trace_path(x)
-        #     return
         outlist = []
         with multiprocessing.Pool(cpus) as p:
             try:
@@ -435,27 +499,11 @@ class NJANet:
                 # logger.warning("Attempting to exit multicore run...")
                 p.terminate()
 
-        return
-
-        imgpaths, lais = zip(*outlist)
-
-        for x in tqdm(self.nodes.values(), bar_format="Tracing Paths: {l_bar}{bar}{r_bar}"):
-            # Loop through output directions
-            for y in x.dirs:
-                try:
-                    traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, return_journey=True)
-                    yuid = tuple(traceout[0])
-                    self.edges[x.uid + yuid] = NJAEdge(x, self.nodes[yuid], uid=x.uid + yuid, pixel_length=traceout[1],
-                                                       direct_length=None, path=traceout[2])
-                except ValueError as e:
-                    # Honestly cycles don't matter
-                    #                     print(str(e))
-                    pass
-                except KeyError:
-                    print(traceout)
-                    print(x)
-                    print(y)
-                    raise
+        for x in outlist:
+            xuid, traceout = x
+            yuid = tuple(traceout[0])
+            self.edges[xuid + yuid] = NJAEdge(self.nodes[xuid], self.nodes[yuid], uid=xuid + yuid,
+                                              pixel_length=traceout[1], direct_length=None, path=traceout[2])
         return self
 
     def clean_edges(self):

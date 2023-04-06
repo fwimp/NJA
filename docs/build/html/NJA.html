@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NJA module &mdash; NJA 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="code" href="modules.html" />
+    <link rel="prev" title="Welcome to NJA’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            NJA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NJA module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.NJAEdge"><code class="docutils literal notranslate"><span class="pre">NJAEdge</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJAEdge.calc_direct_length"><code class="docutils literal notranslate"><span class="pre">NJAEdge.calc_direct_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJAEdge.calc_length_difference"><code class="docutils literal notranslate"><span class="pre">NJAEdge.calc_length_difference()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJAEdge.connected_node_uids"><code class="docutils literal notranslate"><span class="pre">NJAEdge.connected_node_uids</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJAEdge.format_journey"><code class="docutils literal notranslate"><span class="pre">NJAEdge.format_journey()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJAEdge.plotting_repr"><code class="docutils literal notranslate"><span class="pre">NJAEdge.plotting_repr</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJAEdge.print_journey"><code class="docutils literal notranslate"><span class="pre">NJAEdge.print_journey()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.NJANet"><code class="docutils literal notranslate"><span class="pre">NJANet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.basenode_to_roottip_distances"><code class="docutils literal notranslate"><span class="pre">NJANet.basenode_to_roottip_distances()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.calculate_contour_centroids"><code class="docutils literal notranslate"><span class="pre">NJANet.calculate_contour_centroids()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.clean_edges"><code class="docutils literal notranslate"><span class="pre">NJANet.clean_edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.cluster_close_nodes"><code class="docutils literal notranslate"><span class="pre">NJANet.cluster_close_nodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.find_basenode"><code class="docutils literal notranslate"><span class="pre">NJANet.find_basenode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.find_centroid"><code class="docutils literal notranslate"><span class="pre">NJANet.find_centroid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.find_directions"><code class="docutils literal notranslate"><span class="pre">NJANet.find_directions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.find_nodes"><code class="docutils literal notranslate"><span class="pre">NJANet.find_nodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.find_region_asymmetry"><code class="docutils literal notranslate"><span class="pre">NJANet.find_region_asymmetry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.fromimage"><code class="docutils literal notranslate"><span class="pre">NJANet.fromimage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.generate_blurred"><code class="docutils literal notranslate"><span class="pre">NJANet.generate_blurred()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.link_nodes_to_edges"><code class="docutils literal notranslate"><span class="pre">NJANet.link_nodes_to_edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.onenodes"><code class="docutils literal notranslate"><span class="pre">NJANet.onenodes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.plot"><code class="docutils literal notranslate"><span class="pre">NJANet.plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.plot_with_nodedensity"><code class="docutils literal notranslate"><span class="pre">NJANet.plot_with_nodedensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.plot_with_pixeldensity"><code class="docutils literal notranslate"><span class="pre">NJANet.plot_with_pixeldensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.remove_edges_by_uid"><code class="docutils literal notranslate"><span class="pre">NJANet.remove_edges_by_uid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.remove_nodes_by_uid"><code class="docutils literal notranslate"><span class="pre">NJANet.remove_nodes_by_uid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.skeletonize"><code class="docutils literal notranslate"><span class="pre">NJANet.skeletonize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.trace_paths"><code class="docutils literal notranslate"><span class="pre">NJANet.trace_paths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANet.trace_paths_multicore"><code class="docutils literal notranslate"><span class="pre">NJANet.trace_paths_multicore()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.NJANode"><code class="docutils literal notranslate"><span class="pre">NJANode</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANode.connected_edge_uids"><code class="docutils literal notranslate"><span class="pre">NJANode.connected_edge_uids</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANode.find_directions"><code class="docutils literal notranslate"><span class="pre">NJANode.find_directions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANode.flipped_position"><code class="docutils literal notranslate"><span class="pre">NJANode.flipped_position</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANode.format_surround"><code class="docutils literal notranslate"><span class="pre">NJANode.format_surround()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NJA.NJANode.reset_connected"><code class="docutils literal notranslate"><span class="pre">NJANode.reset_connected()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.breadth_first"><code class="docutils literal notranslate"><span class="pre">breadth_first()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.detect_junc"><code class="docutils literal notranslate"><span class="pre">detect_junc()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.fmt_sm"><code class="docutils literal notranslate"><span class="pre">fmt_sm()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.get_3x3"><code class="docutils literal notranslate"><span class="pre">get_3x3()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#NJA.trace_path"><code class="docutils literal notranslate"><span class="pre">trace_path()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">code</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">NJA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">NJA module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/NJA.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-NJA">
+<span id="nja-module"></span><h1>NJA module<a class="headerlink" href="#module-NJA" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="NJA.NJAEdge">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">NJAEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJAEdge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJAEdge" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJAEdge.calc_direct_length">
+<span class="sig-name descname"><span class="pre">calc_direct_length</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJAEdge.calc_direct_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJAEdge.calc_direct_length" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJAEdge.calc_length_difference">
+<span class="sig-name descname"><span class="pre">calc_length_difference</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJAEdge.calc_length_difference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJAEdge.calc_length_difference" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="NJA.NJAEdge.connected_node_uids">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">connected_node_uids</span></span><a class="headerlink" href="#NJA.NJAEdge.connected_node_uids" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJAEdge.format_journey">
+<span class="sig-name descname"><span class="pre">format_journey</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJAEdge.format_journey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJAEdge.format_journey" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="NJA.NJAEdge.plotting_repr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plotting_repr</span></span><a class="headerlink" href="#NJA.NJAEdge.plotting_repr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJAEdge.print_journey">
+<span class="sig-name descname"><span class="pre">print_journey</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJAEdge.print_journey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJAEdge.print_journey" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="NJA.NJANet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">NJANet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.basenode_to_roottip_distances">
+<span class="sig-name descname"><span class="pre">basenode_to_roottip_distances</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.basenode_to_roottip_distances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.basenode_to_roottip_distances" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.calculate_contour_centroids">
+<span class="sig-name descname"><span class="pre">calculate_contour_centroids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.calculate_contour_centroids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.calculate_contour_centroids" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.clean_edges">
+<span class="sig-name descname"><span class="pre">clean_edges</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.clean_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.clean_edges" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.cluster_close_nodes">
+<span class="sig-name descname"><span class="pre">cluster_close_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.cluster_close_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.cluster_close_nodes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.find_basenode">
+<span class="sig-name descname"><span class="pre">find_basenode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.find_basenode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.find_basenode" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.find_centroid">
+<span class="sig-name descname"><span class="pre">find_centroid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.find_centroid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.find_centroid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.find_directions">
+<span class="sig-name descname"><span class="pre">find_directions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.find_directions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.find_directions" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.find_nodes">
+<span class="sig-name descname"><span class="pre">find_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.find_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.find_nodes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.find_region_asymmetry">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">find_region_asymmetry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blurred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.find_region_asymmetry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.find_region_asymmetry" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.fromimage">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fromimage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.fromimage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.fromimage" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.generate_blurred">
+<span class="sig-name descname"><span class="pre">generate_blurred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.generate_blurred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.generate_blurred" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.link_nodes_to_edges">
+<span class="sig-name descname"><span class="pre">link_nodes_to_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">purge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.link_nodes_to_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.link_nodes_to_edges" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="NJA.NJANet.onenodes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">onenodes</span></span><a class="headerlink" href="#NJA.NJANet.onenodes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plotoriginal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.plot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.plot_with_nodedensity">
+<span class="sig-name descname"><span class="pre">plot_with_nodedensity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.plot_with_nodedensity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.plot_with_nodedensity" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.plot_with_pixeldensity">
+<span class="sig-name descname"><span class="pre">plot_with_pixeldensity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.plot_with_pixeldensity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.plot_with_pixeldensity" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.remove_edges_by_uid">
+<span class="sig-name descname"><span class="pre">remove_edges_by_uid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.remove_edges_by_uid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.remove_edges_by_uid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.remove_nodes_by_uid">
+<span class="sig-name descname"><span class="pre">remove_nodes_by_uid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.remove_nodes_by_uid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.remove_nodes_by_uid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.skeletonize">
+<span class="sig-name descname"><span class="pre">skeletonize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.skeletonize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.skeletonize" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.trace_paths">
+<span class="sig-name descname"><span class="pre">trace_paths</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.trace_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.trace_paths" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANet.trace_paths_multicore">
+<span class="sig-name descname"><span class="pre">trace_paths_multicore</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANet.trace_paths_multicore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANet.trace_paths_multicore" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="NJA.NJANode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">NJANode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surround</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">juncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANode" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="NJA.NJANode.connected_edge_uids">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">connected_edge_uids</span></span><a class="headerlink" href="#NJA.NJANode.connected_edge_uids" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANode.find_directions">
+<span class="sig-name descname"><span class="pre">find_directions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANode.find_directions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANode.find_directions" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="NJA.NJANode.flipped_position">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">flipped_position</span></span><a class="headerlink" href="#NJA.NJANode.flipped_position" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANode.format_surround">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">format_surround</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">off</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'⬛'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'🟧'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">here</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'🟥'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANode.format_surround"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANode.format_surround" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="NJA.NJANode.reset_connected">
+<span class="sig-name descname"><span class="pre">reset_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#NJANode.reset_connected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.NJANode.reset_connected" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="NJA.breadth_first">
+<span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">breadth_first</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#breadth_first"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.breadth_first" title="Permalink to this definition"></a></dt>
+<dd><p>Find all nodes connected to the candidate by journeys over edges of a length &lt;= threshold</p>
+<p>Perform an efficient breadth-first search to find all nodes in a <a class="reference internal" href="#NJA.NJANet" title="NJA.NJANet"><code class="xref py py-class docutils literal notranslate"><span class="pre">NJA.NJANet</span></code></a> network connected to a candidate <a class="reference internal" href="#NJA.NJANode" title="NJA.NJANode"><code class="xref py py-class docutils literal notranslate"><span class="pre">NJA.NJANode</span></code></a>
+by taking a path consisting of only edges shorter or equal to the threshold distance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uid</strong> (<em>tuple</em>) – The uid of the candidate node</p></li>
+<li><p><strong>candidates</strong> (<em>set</em>) – A set of candidate node uids (usually ones that have an edge of length &lt;= threshold connected to them)</p></li>
+<li><p><strong>net</strong> (<a class="reference internal" href="#NJA.NJANet" title="NJA.NJANet"><code class="xref py py-class docutils literal notranslate"><span class="pre">NJA.NJANet</span></code></a>) – The full network object</p></li>
+<li><p><strong>threshold</strong> (<em>int</em>) – The threshold distance for each jump of the traversal. Defaults to 2.</p></li>
+<li><p><strong>timeout</strong> (<em>int</em>) – The number of jumps to take before abandoning a search. Defaults to 100.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The set of all node uids connected with the candidate node</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="NJA.detect_junc">
+<span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">detect_junc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flatten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="_modules/NJA.html#detect_junc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.detect_junc" title="Permalink to this definition"></a></dt>
+<dd><p>Detect number of junctions from a pixel based on the surrounding pixels in an image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>numpy.array</em>) – the image to analyse</p></li>
+<li><p><strong>y</strong> (<em>int</em>) – y coordinate of the pixel</p></li>
+<li><p><strong>x</strong> (<em>int</em>) – x coordinate of the pixel</p></li>
+<li><p><strong>flatten</strong> – Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(Submatrix, Num of junctions)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="NJA.fmt_sm">
+<span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">fmt_sm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">off</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'⬛'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'🟧'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">here</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'🟥'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#fmt_sm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.fmt_sm" title="Permalink to this definition"></a></dt>
+<dd><p>Format a 3x3 boolean submatrix using UTF-8 characters.</p>
+<p>For example:</p>
+<p>⬛⬛⬛</p>
+<p>🟧🟥⬛</p>
+<p>⬛🟧🟧</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>submat</strong> (<em>ndarray</em>) – the image to analyse</p></li>
+<li><p><strong>off</strong> (<em>str</em>) – Character to represent False pixels</p></li>
+<li><p><strong>on</strong> (<em>str</em>) – Character to represent False pixels</p></li>
+<li><p><strong>here</strong> (<em>str</em>) – Character to represent the current location</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Formatted string representation</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="NJA.get_3x3">
+<span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">get_3x3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flatten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#get_3x3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.get_3x3" title="Permalink to this definition"></a></dt>
+<dd><p>Get surrounding pixels of a location from a binarised image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>numpy.array</em>) – the image to analyse</p></li>
+<li><p><strong>y</strong> (<em>int</em>) – y coordinate of the pixel</p></li>
+<li><p><strong>x</strong> (<em>int</em>) – x coordinate of the pixel</p></li>
+<li><p><strong>flatten</strong> – Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>3x3 submatrix</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="NJA.trace_path">
+<span class="sig-prename descclassname"><span class="pre">NJA.</span></span><span class="sig-name descname"><span class="pre">trace_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">startpoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_journey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_journey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/NJA.html#trace_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#NJA.trace_path" title="Permalink to this definition"></a></dt>
+<dd><p>Trace the path between two junctions over a skeletonised image.</p>
+<p>Traces the path from a starting point on a skeletonised image along white pixels starting in a given direction until
+another junction is reached.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>startpoint</strong> (<em>list</em>) – A list specifying the startpoint and its context [position, surround, juncs, None] (probably needs a refactor at some point)</p></li>
+<li><p><strong>direction</strong> (<em>str</em>) – The direction to leave the starting pixel (captialised cardinal or ordinal directions, i.e. “N” or “SW”)</p></li>
+<li><p><strong>skel</strong> (<em>numpy.array</em>) – Skeletonised image to traverse</p></li>
+<li><p><strong>print_journey</strong> (<em>bool</em>) – Whether to print the journey taken to the console. Defaults to False.</p></li>
+<li><p><strong>return_journey</strong> (<em>bool</em>) – Whether to return the journey taken. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(endpoint, path length, [optionally, an array of the locations traversed during the trace])</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to NJA’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modules.html" class="btn btn-neutral float-right" title="code" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Francis Windram.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
