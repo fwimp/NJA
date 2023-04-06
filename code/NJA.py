@@ -210,14 +210,14 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
 def breadth_first(uid, candidates, net, threshold=2, timeout=100):
     """Find all nodes connected to the candidate by journeys over edges of a length <= threshold.
     
-    Perform an efficient breadth-first search to find all nodes in a :class:`NJA.NJANet` network connected to a
-    candidate :class:`NJA.NJANode` by taking a path consisting of only edges shorter or equal to the threshold distance.
+    Perform an efficient breadth-first search to find all nodes in a :class:`NJANet` network connected to a
+    candidate :class:`NJANode` by taking a path consisting of only edges shorter or equal to the threshold distance.
     
     Args:
         uid (tuple): The uid of the candidate node.
         candidates (set): A set of candidate node uids (usually ones that have an edge of length <= threshold
             connected to them).
-        net (:class:`NJA.NJANet`): The full network object.
+        net (:class:`NJANet`): The full network object.
         threshold (int): The threshold distance for each jump of the traversal. Defaults to 2.
         timeout (int) : The number of jumps to take before abandoning a search. Defaults to 100.
     
@@ -263,7 +263,7 @@ def breadth_first(uid, candidates, net, threshold=2, timeout=100):
 
 
 class NJANode:
-    """A component node of an NJANet.
+    """A component node of an :class:`NJANet`.
 
     Stores all information about a node in a nice, easy to handle manner. Internally within other structures, NJANodes
     are often stored in dictionaries in the form:
@@ -279,7 +279,7 @@ class NJANode:
         juncs (int): The number of junctions the node has.
         dirs (list of str): The directions that junctions of the node emit.
         uid (tuple): A tuple of the position, acting as a unique identifier.
-        connected_edges (dict): A dictionary of all connected edges (filled using :meth:`NJA.NJAEdge.link_nodes_to_edges`).
+        connected_edges (dict): A dictionary of all connected edges (filled using :meth:`NJANet.link_nodes_to_edges`).
     """
     def __init__(self, pos, surround=None, juncs=None, dirs=None, uid=None):
         self.position = pos
@@ -315,7 +315,7 @@ class NJANode:
         """Find the directions of exits from the node based upon the surround.
 
         Args:
-            dirdict (numpy.array): An array of directions in the form of :data:`NJA.dirs`.
+            dirdict (numpy.array): An array of directions in the form of :data:`dirs`.
         """
         # Requires dirs to be initialised
         if dirdict is None:
@@ -323,18 +323,18 @@ class NJANode:
         self.dirs = list(dirdict[np.flatnonzero(self.surround)])
 
     def reset_connected(self):
-        """Reinitialise :attr:`NJA.NJANode.connected_edges` to a blank dictionary.
+        """Reinitialise :attr:`NJANode.connected_edges` to a blank dictionary.
         """
         self.connected_edges = {}
 
     def format_surround(self, off="⬛", on="🟧", here="🟥"):
-        """A convenience wrapper around :func:`NJA.fmt_sm`.
+        """A convenience wrapper around :func:`fmt_sm`.
         """
         return fmt_sm(self.surround, off, on, here)
 
 
 class NJAEdge:
-    """A component edge of an NJANet.
+    """A component edge of an :class:`NJANet`.
 
     Stores all information about an edge. Internally within other structures, NJAEdges are often stored in
     dictionaries in the form:
@@ -347,8 +347,8 @@ class NJAEdge:
         This allows one to quickly find edges using their node ids.
 
     Attributes:
-        start (:class:`NJA.NJANode`): The start node of the edge.
-        end (:class:`NJA.NJANode`): The end node of the edge.
+        start (:class:`NJANode`): The start node of the edge.
+        end (:class:`NJANode`): The end node of the edge.
         uid (tuple): A tuple of the positions of the start and end nodes, acting as a unique identifier.
         pixel_length (float): The length of the underlying root.
         direct_length (float): The euclidean distance between the nodes.
@@ -382,12 +382,12 @@ class NJAEdge:
 
     @property
     def plotting_repr(self):
-        """The underlying coordinates defining the node, reported in y,x format."""
+        """numpy.array: The underlying coordinates defining the node, reported in y,x format."""
         return [self.start.flipped_position, self.end.flipped_position]
 
     @property
     def connected_node_uids(self):
-        """The uids of the connected nodes."""
+        """tuple: The uids of the connected nodes."""
         return self.start.uid, self.end.uid
 
     def calc_direct_length(self):
@@ -459,7 +459,7 @@ class NJAEdge:
         return formatted
 
     def print_journey(self):
-        """Convenience wrapper around :meth:NJA.NJAEdge.format_journey"""
+        """Convenience wrapper around :meth:NJAEdge.format_journey"""
         print(self.format_journey())
 
 
@@ -468,7 +468,7 @@ class NJANet:
 
     This contains the majority of source and network data alongside methods to process and analyse networks.
 
-    All methods return `self` unless otherwise specified, allowing you to chain methods if required.
+    **All methods return self unless otherwise specified, allowing you to chain methods if required.**
 
     e.g. `NJANet.skeletonize().find_nodes().find_directions()`
 
@@ -478,14 +478,14 @@ class NJANet:
 
     Attributes:
         image (numpy.array): The original image used for processing.
-        blurred (numpy.array): A gaussian-blurred version of the original image, populated by :meth:`NJA.NJANet.generate_blurred`.
-        skel (numpy.array): A skeletonised version of the original image, populated by :meth:`NJA.NJANet.skeletonize`.
-        centroid (numpy.array): The centroid of the white pixels in :attr:`NJA.NJANet.image`, populated by :meth:`NJA.NJANet.find_centroid`.
-        contour_centroids (numpy.array): An array of centroids generated from progressively thresholding :attr:`NJA.NJANet.blurred`.
-            Generated by :meth:`NJA.NJANet.calculate_contour_centroids`.
-        basenode (:class:`NJA.NJANode`): The calculated node closest to the estimated base of the tree, populated by :meth:`NJA.NJANet.find_basenode`.
-        nodes (dict of :class:`NJA.NJANode` objects): The nodes of the network in the form `{uid: NJANode}`.
-        edges (dict of :class:`NJA.NJAEdge` objects): The edges of the network in the form `{uid: NJAEdge}`.
+        blurred (numpy.array): A gaussian-blurred version of the original image, populated by :meth:`NJANet.generate_blurred`.
+        skel (numpy.array): A skeletonised version of the original image, populated by :meth:`NJANet.skeletonize`.
+        centroid (numpy.array): The centroid of the white pixels in :attr:`NJANet.image`, populated by :meth:`NJANet.find_centroid`.
+        contour_centroids (numpy.array): An array of centroids generated from progressively thresholding :attr:`NJANet.blurred`.
+            Generated by :meth:`NJANet.calculate_contour_centroids`.
+        basenode (:class:`NJANode`): The calculated node closest to the estimated base of the tree, populated by :meth:`NJANet.find_basenode`.
+        nodes (dict of :class:`NJANode` objects): The nodes of the network in the form `{uid: NJANode}`.
+        edges (dict of :class:`NJAEdge` objects): The edges of the network in the form `{uid: NJAEdge}`.
     """
     def __init__(self, image):
         self.image = image
@@ -501,13 +501,13 @@ class NJANet:
         return f"{self.__class__.__name__}\nNodes: {len(self.nodes)}\nEdges: {len(self.edges)}"
 
     def skeletonize(self):
-        """Reduce :attr:`NJA.NJANet.image` to a 1px wide skeleton using the `skeletonize()` function of skimage.
+        """Reduce :attr:`NJANet.image` to a 1px wide skeleton using the `skeletonize()` function of skimage.
         """
         self.skel = skeletonize(self.image)
         return self
     
     def generate_blurred(self, sigma=30):
-        """Generate a gaussian-blurred version of :attr:`NJA.NJANet.image`.
+        """Generate a gaussian-blurred version of :attr:`NJANet.image`.
 
         Args:
             sigma (int): Gaussian blur kernel size (amount of blur to apply).
@@ -516,7 +516,7 @@ class NJANet:
         return self
     
     def find_centroid(self):
-        """Find the centroid of all white pixels in :attr:`NJA.NJANet.image`.
+        """Find the centroid of all white pixels in :attr:`NJANet.image`.
         """
         region = regionprops(self.image.astype(np.uint8))[0]
         self.centroid = region.centroid
@@ -524,7 +524,7 @@ class NJANet:
         
     @staticmethod
     def find_region_asymmetry(blurred, threshold):
-        """Generate the centroid of white pixels in :attr:`NJA.NJANet.blurred` at a given intensity threshold.
+        """Generate the centroid of white pixels in :attr:`NJANet.blurred` at a given intensity threshold.
 
         Args:
             blurred (numpy.array): Gaussian-blurred image.
@@ -535,7 +535,7 @@ class NJANet:
         return region.centroid
 
     def calculate_contour_centroids(self, contours=128):
-        """Calculate the centroids of :attr:`NJA.NJANet.blurred` across countours of progressively-increasing thresholds.
+        """Calculate the centroids of :attr:`NJANet.blurred` across countours of progressively-increasing thresholds.
 
         Args:
             contours (int): Number of contours to generate.
@@ -551,7 +551,7 @@ class NJANet:
         return self
 
     def find_nodes(self):
-        """Detect all junctions in :attr:`NJA.NJANet.image`.
+        """Detect all junctions in :attr:`NJANet.image`.
 
         A node here is defined as any white pixel that borders 1 or >=3 other white pixels
         """
@@ -579,6 +579,18 @@ class NJANet:
         return len([x for x in self.nodes.values() if x.juncs == 1])
     
     def find_basenode(self, target=None):
+        """Estimate the closest node to the trunk of the tree.
+
+        This assumes that the trunk of the tree is likely the densest part. As such the highest-threshold centroid is
+        chosen and the closest node to that is assigned as the basenode.
+
+        Warning:
+            If you run this after :meth:`NJANet.cluster_close_nodes` then you may need to regenerate the basenode.
+
+        Args:
+            target (numpy.array): An optional target to be used instead of the highest-threshold centroid.
+
+        """
         if self.contour_centroids is None:
             self.calculate_contour_centroids()
         if target is None:
@@ -587,11 +599,15 @@ class NJANet:
         tnodes = np.array(list(self.nodes.keys()))
         self.basenode = self.nodes[tuple(tnodes[np.argmin((np.linalg.norm(tnodes - target, ord=2, axis=1)))])]
         return self
-    
+
+    @property
     def basenode_to_roottip_distances(self):
+        """numpy.array: The distances of all 1-nodes from the basenode."""
         return np.linalg.norm(np.array([x.position for x in self.nodes.values() if x.juncs == 1]) - self.basenode.position, ord=2, axis=1)
 
     def trace_paths(self):
+        """Trace paths to find edges between all nodes based upon the node directions and :attr:`NJANet.skel`.
+        """
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
         # outlist = []
         traceout = None
@@ -624,6 +640,10 @@ class NJANet:
             return None
 
     def trace_paths_multicore(self):
+        """Multicore implementation of :meth:`NJANet.trace_paths`, find all edges in the network based upon :attr:`NJANet.skel`.
+
+        This is about 50% faster than the single-core implementation, but the difference is measurable in ms.
+        """
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
         cpus = multiprocessing.cpu_count() - 1
 
@@ -650,6 +670,16 @@ class NJANet:
         return self
 
     def clean_edges(self, regenuids=False, purge=False):
+        """Clean up duplicate edges, optionally regenerating uids.
+
+        Often after :meth:`NJANet.trace_paths` or :meth:`NJANet.cluster_close_nodes` you can end up with edges
+        that are synonymous (i.e. A->B and B->A). This method removes duplicates and optionally forces the regeneration
+        of uids and the keys of :attr:`NJANet.edges`.
+
+        Args:
+            regenuids (bool): Require regeneration of uid prior to cleaning.
+            purge (bool): Force regeneration of underlying :attr:`NJANode.connected_edges` for connected nodes.
+        """
         cleandict = dict()
         for x in tqdm(self.edges, bar_format="Cleaning Edgelist: {l_bar}{bar}{r_bar}"):
             oldx = x
@@ -669,6 +699,11 @@ class NJANet:
         return self
 
     def link_nodes_to_edges(self, purge=False):
+        """Populate :attr:`NJANode.connected_edges` for each node connected to at least one edge.
+
+        Args:
+            purge (bool): Reset :attr:`NJANode.connected_edges` prior to inserting values to purge old entries.
+        """
         if purge:
             for x in self.nodes.values():
                 x.reset_connected()
@@ -678,6 +713,11 @@ class NJANet:
         return self
 
     def remove_edges_by_uid(self, uids):
+        """Remove edges from :attr:`NJANet.edges` by uid.
+
+        Args:
+            uids (iterable of tuples): The uids of the edges to remove.
+        """
         if len(uids) == 4:
             if all([isinstance(x, int) for x in uids]):
                 uids = [uids]
@@ -686,6 +726,11 @@ class NJANet:
         return self
 
     def remove_nodes_by_uid(self, uids):
+        """Remove nodes from :attr:`NJANet.nodes` by uid.
+
+        Args:
+            uids (iterable of tuples): The uids of the nodes to remove.
+        """
         if len(uids) == 2:
             if all([isinstance(x, int) for x in uids]):
                 uids = [uids]
@@ -694,6 +739,21 @@ class NJANet:
         return self
 
     def cluster_close_nodes(self, threshold=2, timeout=100):
+        """Cluster and identify close-together nodes based upon a threshold edge distance.
+
+        This method clusters nodes that are accessible by taking jumps along edges of less than `threshold` distance.
+        The nodes become identified with the node closest to the centroid of connected nodes, and all others are
+        deleted. Edges that were connected to now-deleted nodes are instead connected to the singular chosen node.
+
+        Warning:
+             Will only function correctly after :meth:`NJANet.link_nodes_to_edges` is executed, otherwise will cluster
+             no nodes on the first try. If run again it will succeed due to this function calling the linker as part
+             of its routine.
+
+        Args:
+            threshold (int): The threshold distance for each jump of the traversal. Defaults to 2.
+            timeout (int) : The number of jumps to take before abandoning a search. Defaults to 100.
+        """
         # Can only be run after link_nodes...
         thresholded_edges = [x for x in self.edges.values() if x.pixel_length <= threshold]
         candidateset = {x.start.uid for x in thresholded_edges}.union({x.end.uid for x in thresholded_edges})
@@ -752,6 +812,7 @@ class NJANet:
         return self
 
     def _check_integrity(self):
+        """Debug method to check the integrity of a NJANet. Not needed for normal use."""
         detectederror = False
         # Check number of nodes
         if len(self.nodes) < 1 or len(self.edges) < 1:
@@ -789,6 +850,20 @@ class NJANet:
 
     @staticmethod
     def fromimage(image):
+        """Generate an :class:`NJANet` object from an image or path.
+
+        This function loads, skeletonises, finds nodes, directions and edges, then cleans them. It is intended as a
+        quick default way to load an image without remembering commands that are nearly always required in day-to-day
+        use.
+
+        Args:
+            image (numpy.array or str): An image or a path to an image to load.
+
+        Returns:
+            :class:`NJANet`
+        """
+        # TODO: Add any further analysis steps that might be sensible.
+
         # Load from path if needed
         if isinstance(image, str):
             image = io.imread(image)[:, :, :3]
@@ -803,6 +878,11 @@ class NJANet:
         return net
 
     def plot(self, plotoriginal=False):
+        """Plot the :class:`NJANet` object.
+
+        Args:
+            plotoriginal (bool): Plot the original image under the network.
+        """
         fig, ax = plt.subplots()
         if plotoriginal:
             ax.imshow(self.image, cmap=plt.cm.gray)
@@ -820,6 +900,8 @@ class NJANet:
         plt.show()
 
     def plot_with_pixeldensity(self):
+        """Plot the :class:`NJANet` object alongside the vertical density of pixels line-by-line.
+        """
         gridsize = (1, 7)
         fig = plt.figure(figsize=(18, 10))
         ax0 = plt.subplot2grid(gridsize, (0, 0), colspan=6, rowspan=1)
@@ -837,6 +919,8 @@ class NJANet:
         plt.show()
 
     def plot_with_nodedensity(self):
+        """Plot the :class:`NJANet` object alongside the vertical density of nodes line-by-line.
+        """
         gridsize = (1, 7)
         fig = plt.figure(figsize=(18, 10))
         ax0 = plt.subplot2grid(gridsize, (0, 0), colspan=6, rowspan=1)
