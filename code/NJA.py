@@ -265,7 +265,7 @@ def breadth_first(uid, candidates, net, threshold=2, timeout=100):
 class NJANode:
     """A component node of an NJANet.
 
-    Stores all information about a node in a nice, easy to handle manner. Internally within other structures, NJA nodes
+    Stores all information about a node in a nice, easy to handle manner. Internally within other structures, NJANodes
     are often stored in dictionaries in the form:
 
     `{uid: NJANode, uid2: NJANode...}`
@@ -316,7 +316,6 @@ class NJANode:
 
         Args:
             dirdict: An array of directions in the form of :data:`NJA.dirs`
-
         """
         # Requires dirs to be initialised
         if dirdict is None:
@@ -335,6 +334,27 @@ class NJANode:
 
 
 class NJAEdge:
+    """A component node of an NJANet.
+
+        Stores all information about an edg. Internally within other structures, NJAEdges are often stored in
+        dictionaries in the form:
+
+        `{(startuid enduid): NJAEdge, (startuid2 enduid2): NJAEdge,...}`
+
+        These uids are thus formatted `(x1 y1 x2 y2)`
+
+        Note:
+            This allows one to quickly find edges using their node ids.
+
+        Attributes:
+            start:
+            end:
+            uid:
+            pixel_length:
+            direct_length:
+            length_difference:
+            path:
+    """
     def __init__(self, start, end, uid=None, pixel_length=None, direct_length=None, path=None):
         self.start = start
         self.end = end
@@ -378,6 +398,11 @@ class NJAEdge:
         self.calc_direct_length()
         self.length_difference = abs(self.pixel_length - self.direct_length)
         return self
+
+    def regenerate_uid(self, returnuid=False):
+        self.uid = self.start.uid + self.end.uid
+        if returnuid:
+            return self.uid
 
     def format_journey(self):
         if self.path is None:
@@ -538,18 +563,23 @@ class NJANet:
                                               pixel_length=traceout[1], direct_length=None, path=traceout[2])
         return self
 
-    def clean_edges(self):
+    def clean_edges(self, regenuids=False, purge=False):
         cleandict = dict()
         for x in tqdm(self.edges, bar_format="Cleaning Edgelist: {l_bar}{bar}{r_bar}"):
+            oldx = x
+            if regenuids:
+                # Regenerate uids for edges in edgelist and force Node.connected_edges to repopulate
+                x = self.edges[oldx].regenerate_uid(returnuid=True)
+                purge = True
             if tuple([x[2], x[3], x[0], x[1]]) in cleandict:
                 # Much more common
                 pass
             elif x in cleandict:
                 pass
             else:
-                cleandict[x] = self.edges[x]
+                cleandict[x] = self.edges[oldx]
         self.edges = cleandict
-        self.link_nodes_to_edges()
+        self.link_nodes_to_edges(purge=purge)
         return self
 
     def link_nodes_to_edges(self, purge=False):
@@ -581,6 +611,7 @@ class NJANet:
         # Can only be run after link_nodes...
         thresholded_edges = [x for x in self.edges.values() if x.pixel_length <= threshold]
         candidateset = {x.start.uid for x in thresholded_edges}.union({x.end.uid for x in thresholded_edges})
+
         # Find
         grouped_candidates = []
         try:
@@ -595,6 +626,8 @@ class NJANet:
         except KeyError:
             #             print(f"Done in {len(grouped_candidates)} runs")
             pass
+
+        # TODO: Maybe check here to see if linked nodes has actually been run.
 
         final_clusters = {}
         for x in grouped_candidates:
@@ -626,9 +659,46 @@ class NJANet:
                         edges_to_purge.add(euid)
         self.remove_edges_by_uid(edges_to_purge)
         self.remove_nodes_by_uid(nodes_to_purge)
-        self.link_nodes_to_edges(purge=True)
+        # TODO: Check whether edge uids in self.edges need to be reassigned
+        self.clean_edges(regenuids=True)
 
         return self
+
+    def _check_integrity(self):
+        detectederror = False
+        # Check number of nodes
+        if len(self.nodes) < 1 or len(self.edges) < 1:
+            detectederror = True
+        # Check number of edges
+        # Check node uids match uids in nodes
+        # Check edge uids match uids of edges
+            # Check edge uids match linked nodeuids (maybe)
+
+        node_dict_errors = [str(key) for key, node in
+                            tqdm(self.nodes.items(), bar_format="Checking Node Dict UIDs: {l_bar}{bar}{r_bar}") if
+                            key != tuple(node.position)]
+        edge_dict_errors = [str(key) for key, edge in
+                            tqdm(self.edges.items(), bar_format="Checking Edge Dict UIDs: {l_bar}{bar}{r_bar}") if
+                            key != edge.start.uid + edge.end.uid]
+        if len(node_dict_errors) > 0 or len(edge_dict_errors) > 0:
+            detectederror = True
+        if detectederror:
+            print("\033[31mERROR DETECTED!")
+        else:
+            print(f"\033[32mNo Errors Found!")
+        print(f"Nodes: {len(self.nodes)}\n"
+              f"Edges: {len(self.edges)}")
+        if node_dict_errors:
+            print("Node Dict Errors:\n" + "\n".join(node_dict_errors))
+        else:
+            print("Node Dict Errors: 0")
+
+        if edge_dict_errors:
+            print("Edge Dict Errors:\n" + "\n".join(edge_dict_errors))
+        else:
+            print("Edge Dict Errors: 0")
+
+        print("\033[0m")   # Clear colour
 
     @staticmethod
     def fromimage(image):
@@ -641,7 +711,7 @@ class NJANet:
         net = net.skeletonize().find_nodes()
         net = net.find_directions()
         net = net.trace_paths().clean_edges()
-        net = net.link_nodes_to_edges()
+        # net = net.link_nodes_to_edges()   # Probably don't need to do this as clean_edges should already link.
         #         net = net.cluster_close_nodes()
         return net
 
