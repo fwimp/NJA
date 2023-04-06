@@ -10,7 +10,6 @@ Welcome to NJA's documentation!
    :maxdepth: 2
    :caption: Contents:
    
-   NJA
    modules
 
 Indices and tables

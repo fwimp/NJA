@@ -28,7 +28,7 @@ extensions = [
 ]
 
 templates_path = ['_templates']
-exclude_patterns = [".ipynb_checkpoints", "modules"]
+exclude_patterns = [".ipynb_checkpoints", "modules", ".ipynb"]
 
 
 

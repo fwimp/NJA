@@ -258,6 +258,16 @@ def breadth_first(uid, candidates, net, threshold=2, timeout=100):
 
 
 class NJANode:
+    """A component node of an NJANet
+
+    Attributes:
+        position: A tuple(?) of ints indicating the position of the node.
+        surround: A 3x3 numpy array indicating the pixel context of the node.
+        juncs: An integer count of the number of junctions the node has
+        dirs: A list of strings indicating the directions that junctions of the node emit
+        uid: A tuple of the position, acting as a unique identifier
+        connected_edges: A dictionary of all connected edges (filled using :meth:`NJA.NJAEdge.link_nodes_to_edges`)
+    """
     def __init__(self, pos, surround=None, juncs=None, dirs=None, uid=None):
         self.position = pos
         self.surround = surround
@@ -277,11 +287,15 @@ class NJANode:
 
     @property
     def flipped_position(self):
+        """The position of the node in y,x coordinates (for plotting with matplotlib)
+        """
         # for plotting
         return [self.position[1], self.position[0]]
 
     @property
     def connected_edge_uids(self):
+        """The uids of all connected edges as a tuple
+        """
         return tuple(self.connected_edges.keys())
 
     def find_directions(self, dirdict=None):
@@ -293,13 +307,10 @@ class NJANode:
     def reset_connected(self):
         self.connected_edges = {}
 
-    @staticmethod
-    def format_surround(submat, off="⬛", on="🟧", here="🟥"):
-        formatted = np.repeat([off], 9).reshape([3, 3])
-        formatted[submat] = on
-        formatted[1, 1] = here
-        formatted = "\n".join(["".join(x) for x in formatted])
-        return formatted
+    def format_surround(self, off="⬛", on="🟧", here="🟥"):
+        """A convenience wrapper around :func:`NJA.fmt_sm`
+        """
+        return fmt_sm(self.surround, off, on, here)
 
 
 class NJAEdge:
