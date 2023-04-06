@@ -22,9 +22,11 @@ import multiprocessing
 
 # TODO: Document global dicts
 dirs = np.array(["NW", "N", "NE", "W", None, "E", "SW", "S", "SE"])
+"""numpy.array: Lookup for possible directions based upon index in a flattened 3x3 matrix relative to (1,1) 
+"""
+
 dir_deltas = np.array([(-1,-1), (-1,0), (-1,1), (0,-1), (0,0), (0,1), (1,-1), (1,0), (1,1)])
 revdirs = list(reversed(dirs))
-
 dir_lookup = {x: [i] for i, x in enumerate(dirs) if x is not None}
 for x in dir_lookup:
     # print(x)
@@ -35,13 +37,13 @@ def get_3x3(image, y, x, flatten=False):
     """Get surrounding pixels of a location from a binarised image.
     
     Args:
-        image (numpy.array): the image to analyse
-        y (int): y coordinate of the pixel
-        x (int): x coordinate of the pixel
+        image (numpy.array): the image to analyse.
+        y (int): y coordinate of the pixel.
+        x (int): x coordinate of the pixel.
         flatten : Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.
     
     Returns:
-        numpy.array: 3x3 submatrix
+        numpy.array: 3x3 submatrix of the surrounding pixels.
     """
     edgedict = {
         "top": [[0, 2, 1, 2], [1, 0]],  # Get a 3x2 matrix, then overlay that over point [r=1, c=0] on a 3x3 zeros mat
@@ -90,13 +92,13 @@ def detect_junc(image, y: int, x: int, flatten=False) -> tuple:
     """Detect number of junctions from a pixel based on the surrounding pixels in an image.
     
     Args:
-        image (numpy.array): the image to analyse
-        y (int): y coordinate of the pixel
-        x (int): x coordinate of the pixel
+        image (numpy.array): the image to analyse.
+        y (int): y coordinate of the pixel.
+        x (int): x coordinate of the pixel.
         flatten : Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.
     
     Returns:
-        tuple: (Submatrix, Num of junctions)
+        tuple: (Submatrix, Num of junctions).
     """
     submat = get_3x3(image, y, x, flatten)
     submat[1][1] = False
@@ -112,13 +114,13 @@ def fmt_sm(submat, off="⬛", on="🟧", here="🟥"):
     ⬛🟧🟧
     
     Args:
-        submat (ndarray): the image to analyse
-        off (str): Character to represent False pixels
-        on (str): Character to represent False pixels
-        here (str) : Character to represent the current location
+        submat (ndarray): the image to analyse.
+        off (str): Character to represent False pixels.
+        on (str): Character to represent False pixels.
+        here (str) : Character to represent the current location.
     
     Returns:
-        str: Formatted string representation
+        str: Formatted string representation.
     """
     formatted = np.repeat([off], 9).reshape([3, 3])
     formatted[submat] = on
@@ -134,14 +136,16 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
     another junction is reached.
 
     Args:
-        startpoint (list): A list specifying the startpoint and its context [position, surround, juncs, None] (probably needs a refactor at some point)
-        direction (str): The direction to leave the starting pixel (captialised cardinal or ordinal directions, i.e. "N" or "SW")
-        skel (numpy.array): Skeletonised image to traverse
+        startpoint (list): A list specifying the startpoint and its context [position, surround, juncs, None]
+            (probably needs a refactor at some point).
+        direction (str): The direction to leave the starting pixel (captialised cardinal or ordinal directions,
+            i.e. "N" or "SW").
+        skel (numpy.array): Skeletonised image to traverse.
         print_journey (bool): Whether to print the journey taken to the console. Defaults to False.
         return_journey (bool): Whether to return the journey taken. Defaults to False.
 
     Returns:
-        tuple: (endpoint, path length, [optionally, an array of the locations traversed during the trace])
+        tuple: (endpoint, path length, [optionally, an array of the locations traversed during the trace]).
         """
     if print_journey:
         print(fmt_sm(startpoint[1]))
@@ -204,20 +208,21 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
 
 
 def breadth_first(uid, candidates, net, threshold=2, timeout=100):
-    """Find all nodes connected to the candidate by journeys over edges of a length <= threshold
+    """Find all nodes connected to the candidate by journeys over edges of a length <= threshold.
     
-    Perform an efficient breadth-first search to find all nodes in a :class:`NJA.NJANet` network connected to a candidate :class:`NJA.NJANode` 
-    by taking a path consisting of only edges shorter or equal to the threshold distance.
+    Perform an efficient breadth-first search to find all nodes in a :class:`NJA.NJANet` network connected to a
+    candidate :class:`NJA.NJANode` by taking a path consisting of only edges shorter or equal to the threshold distance.
     
     Args:
-        uid (tuple): The uid of the candidate node
-        candidates (set): A set of candidate node uids (usually ones that have an edge of length <= threshold connected to them)
-        net (:class:`NJA.NJANet`): The full network object
+        uid (tuple): The uid of the candidate node.
+        candidates (set): A set of candidate node uids (usually ones that have an edge of length <= threshold
+            connected to them).
+        net (:class:`NJA.NJANet`): The full network object.
         threshold (int): The threshold distance for each jump of the traversal. Defaults to 2.
         timeout (int) : The number of jumps to take before abandoning a search. Defaults to 100.
     
     Returns:
-        set: The set of all node uids connected with the candidate node
+        set: The set of all node uids connected with the candidate node.
     """
     finalset = {uid}
     prevset = {uid}
@@ -258,7 +263,15 @@ def breadth_first(uid, candidates, net, threshold=2, timeout=100):
 
 
 class NJANode:
-    """A component node of an NJANet
+    """A component node of an NJANet.
+
+    Stores all information about a node in a nice, easy to handle manner. Internally within other structures, NJA nodes
+    are often stored in dictionaries in the form:
+
+    `{uid: NJANode, uid2: NJANode...}`
+
+    Note:
+        This allows one to quickly find nodes in a dict by indexing using their uids as the key.
 
     Attributes:
         position: A tuple(?) of ints indicating the position of the node.
@@ -287,28 +300,36 @@ class NJANode:
 
     @property
     def flipped_position(self):
-        """The position of the node in y,x coordinates (for plotting with matplotlib)
+        """The position of the node in y,x coordinates (for plotting with matplotlib).
         """
         # for plotting
         return [self.position[1], self.position[0]]
 
     @property
     def connected_edge_uids(self):
-        """The uids of all connected edges as a tuple
+        """The uids of all connected edges as a tuple.
         """
         return tuple(self.connected_edges.keys())
 
     def find_directions(self, dirdict=None):
+        """Find the directions of exits from the node based upon the surround
+
+        Args:
+            dirdict: An array of directions in the form of :data:`NJA.dirs`
+
+        """
         # Requires dirs to be initialised
         if dirdict is None:
             dirdict = dirs
         self.dirs = list(dirdict[np.flatnonzero(self.surround)])
 
     def reset_connected(self):
+        """Reinitialise :attr:`NJA.NJANode.connected_edges` to a blank dictionary
+        """
         self.connected_edges = {}
 
     def format_surround(self, off="⬛", on="🟧", here="🟥"):
-        """A convenience wrapper around :func:`NJA.fmt_sm`
+        """A convenience wrapper around :func:`NJA.fmt_sm`.
         """
         return fmt_sm(self.surround, off, on, here)
 
