@@ -95,7 +95,7 @@ def detect_junc(image, y: int, x: int, flatten=False) -> tuple:
         image (numpy.array): the image to analyse.
         y (int): y coordinate of the pixel.
         x (int): x coordinate of the pixel.
-        flatten : Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.
+        flatten (bool): Return the submatrix in a flat (1D) form rather than its usual 3x3. Defaults to False.
     
     Returns:
         tuple: (Submatrix, Num of junctions).
@@ -114,10 +114,10 @@ def fmt_sm(submat, off="⬛", on="🟧", here="🟥"):
     ⬛🟧🟧
     
     Args:
-        submat (ndarray): the image to analyse.
-        off (str): Character to represent False pixels.
-        on (str): Character to represent False pixels.
-        here (str) : Character to represent the current location.
+        submat (numpy.array): the image to analyse.
+        off (str): Character to represent False pixels. Defaults to "⬛".
+        on (str): Character to represent True pixels. Defaults to "🟧".
+        here (str) : Character to represent the current location. Defaults to "🟥".
     
     Returns:
         str: Formatted string representation.
@@ -274,12 +274,12 @@ class NJANode:
         This allows one to quickly find nodes in a dict by indexing using their uids as the key.
 
     Attributes:
-        position: A tuple(?) of ints indicating the position of the node.
-        surround: A 3x3 numpy array indicating the pixel context of the node.
-        juncs: An integer count of the number of junctions the node has
-        dirs: A list of strings indicating the directions that junctions of the node emit
-        uid: A tuple of the position, acting as a unique identifier
-        connected_edges: A dictionary of all connected edges (filled using :meth:`NJA.NJAEdge.link_nodes_to_edges`)
+        position (array-like of int): The position of the node.
+        surround (numpy.array): A 3x3 array indicating the pixel context of the node.
+        juncs (int): The number of junctions the node has.
+        dirs (list of str): The directions that junctions of the node emit.
+        uid (tuple): A tuple of the position, acting as a unique identifier.
+        connected_edges (dict): A dictionary of all connected edges (filled using :meth:`NJA.NJAEdge.link_nodes_to_edges`).
     """
     def __init__(self, pos, surround=None, juncs=None, dirs=None, uid=None):
         self.position = pos
@@ -312,10 +312,10 @@ class NJANode:
         return tuple(self.connected_edges.keys())
 
     def find_directions(self, dirdict=None):
-        """Find the directions of exits from the node based upon the surround
+        """Find the directions of exits from the node based upon the surround.
 
         Args:
-            dirdict: An array of directions in the form of :data:`NJA.dirs`
+            dirdict (numpy.array): An array of directions in the form of :data:`NJA.dirs`.
         """
         # Requires dirs to be initialised
         if dirdict is None:
@@ -323,7 +323,7 @@ class NJANode:
         self.dirs = list(dirdict[np.flatnonzero(self.surround)])
 
     def reset_connected(self):
-        """Reinitialise :attr:`NJA.NJANode.connected_edges` to a blank dictionary
+        """Reinitialise :attr:`NJA.NJANode.connected_edges` to a blank dictionary.
         """
         self.connected_edges = {}
 
@@ -334,26 +334,26 @@ class NJANode:
 
 
 class NJAEdge:
-    """A component node of an NJANet.
+    """A component edge of an NJANet.
 
-        Stores all information about an edg. Internally within other structures, NJAEdges are often stored in
+        Stores all information about an edge. Internally within other structures, NJAEdges are often stored in
         dictionaries in the form:
 
         `{(startuid enduid): NJAEdge, (startuid2 enduid2): NJAEdge,...}`
 
-        These uids are thus formatted `(x1 y1 x2 y2)`
+        These uids are thus formatted `(x1, y1, x2, y2)`.
 
         Note:
             This allows one to quickly find edges using their node ids.
 
         Attributes:
-            start:
-            end:
-            uid:
-            pixel_length:
-            direct_length:
-            length_difference:
-            path:
+            start (:class:`NJA.NJANode`): The start node of the edge.
+            end (:class:`NJA.NJANode`): The end node of the edge.
+            uid (tuple): A tuple of the positions of the start and end nodes, acting as a unique identifier.
+            pixel_length (float): The length of the underlying root.
+            direct_length (float): The euclidean distance between the nodes.
+            length_difference (float): The difference between the pixel length and the direct length.
+            path (numpy.array): An array of the pixels traversed during the generation of this edge.
     """
     def __init__(self, start, end, uid=None, pixel_length=None, direct_length=None, path=None):
         self.start = start
@@ -382,32 +382,67 @@ class NJAEdge:
 
     @property
     def plotting_repr(self):
+        """The underlying coordinates defining the node, reported in y,x format."""
         return [self.start.flipped_position, self.end.flipped_position]
 
     @property
     def connected_node_uids(self):
+        """The uids of the connected nodes."""
         return self.start.uid, self.end.uid
 
     def calc_direct_length(self):
+        """Calculate the euclidean distance between the start and end nodes.
+
+        Returns:
+            float: Distance in units of pixels.
+        """
         # self.direct_length = np.sqrt((self.start.position[0] - self.end.position[0])**2 + (self.start.position[1] - self.end.position[1])**2)
         # Same as above as the L2 norm (ord=2) is the same as the euclidian distance.
         self.direct_length = np.linalg.norm(self.start.position - self.end.position, ord=2, axis=0)
         return self
 
     def calc_length_difference(self):
+        """ Calculate the absolute difference between the direct and pixel lengths of the edge.
+
+        Returns:
+            float: Difference in distances in units of pixels.
+        """
         self.calc_direct_length()
         self.length_difference = abs(self.pixel_length - self.direct_length)
         return self
 
     def regenerate_uid(self, returnuid=False):
+        """Regenerate the internal uid of the edge from the start and end uids
+
+        Args:
+            returnuid (bool): Returns the uid if True.
+
+        Returns:
+            tuple: (optional) The current calculated uid of the edge.
+        """
+
         self.uid = self.start.uid + self.end.uid
         if returnuid:
             return self.uid
 
-    def format_journey(self):
+    def format_journey(self, off="⬛", on="🟧", start="🟩", end="🟥"):
+        """Generate a formatted string of UTF-8 icons representing the journey taken while tracing this edge.
+
+        Note:
+            See :func:`fmt_sm` for more details on formatting
+
+        Args:
+            off (str): Character to represent False pixels. Defaults to "⬛".
+            on (str): Character to represent True pixels. Defaults to "🟧".
+            start (str): Character to represent the start pixel. Defaults to "🟩".
+            end (str): Character to represent the end pixel. Defaults to "🟥".
+
+        Returns:
+            str: Formatted string representation.
+        """
         if self.path is None:
             print(f"No path trace detected in edge {self.uid}")
-            return None
+            return ""
         path = self.path
         ymin = path[:, 0].min()
         ymax = path[:, 0].max()
@@ -415,15 +450,16 @@ class NJAEdge:
         xmax = path[:, 1].max()
         dims = [(ymax - ymin) + 1, (xmax - xmin) + 1]
         newpath = deepcopy(path) - np.array([ymin, xmin])
-        output = np.repeat("⬛", dims[0] * dims[1]).reshape(dims)
+        output = np.repeat(f"{off}", dims[0] * dims[1]).reshape(dims)
         for x in newpath:
-            output[x[0], x[1]] = "🟧"
-        output[newpath[0][0], newpath[0][1]] = "🟩"
-        output[newpath[-1][0], newpath[-1][1]] = "🟥"
+            output[x[0], x[1]] = on
+        output[newpath[0][0], newpath[0][1]] = start
+        output[newpath[-1][0], newpath[-1][1]] = end
         formatted = "\n".join(["".join(x) for x in output])
         return formatted
 
     def print_journey(self):
+        """Convenience wrapper around :meth:NJA.NJAEdge.format_journey"""
         print(self.format_journey())
 
 
@@ -659,7 +695,8 @@ class NJANet:
                         edges_to_purge.add(euid)
         self.remove_edges_by_uid(edges_to_purge)
         self.remove_nodes_by_uid(nodes_to_purge)
-        # TODO: Check whether edge uids in self.edges need to be reassigned
+        # TODO: Check whether edges need to regenerate their distance measurements, or whether we need to reassign
+        #  these during the purge!!!
         self.clean_edges(regenuids=True)
 
         return self
