@@ -459,7 +459,7 @@ class NJAEdge:
         return formatted
 
     def print_journey(self):
-        """Convenience wrapper around :meth:NJAEdge.format_journey"""
+        """Convenience wrapper around :meth:`NJAEdge.format_journey`"""
         print(self.format_journey())
 
 
