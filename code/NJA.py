@@ -271,7 +271,7 @@ class NJANode:
     `{uid: NJANode, uid2: NJANode...}`
 
     Note:
-        This allows one to quickly find nodes in a dict by indexing using their uids as the key.
+        This allows one to quickly find nodes in a dict by indexing using their position (cast to a tuple) as the key.
 
     Attributes:
         position (array-like of int): The position of the node.
