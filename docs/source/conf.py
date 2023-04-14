@@ -37,3 +37,7 @@ exclude_patterns = [".ipynb_checkpoints", "modules", ".ipynb"]
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+html_theme_options = {
+    'logo_only': True
+}
+html_logo = "logo.svg"

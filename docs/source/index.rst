@@ -13,11 +13,6 @@ NJA
    :maxdepth: 2
    :caption: Contents:
    
-   modules
+   NJA
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
-
+Stuff is here
