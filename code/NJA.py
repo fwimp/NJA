@@ -748,6 +748,8 @@ class NJANet:
         This method clusters nodes that are accessible by taking jumps along edges of less than `threshold` distance.
         The nodes become identified with the node closest to the centroid of connected nodes, and all others are
         deleted. Edges that were connected to now-deleted nodes are instead connected to the singular chosen node.
+        
+        This method can be run repeatedly, but will only have an effect if the threshold is increased between runs.
 
         Warning:
              Will only function correctly after :meth:`NJANet.link_nodes_to_edges` is executed, otherwise will cluster
@@ -853,7 +855,7 @@ class NJANet:
         print("\033[0m")   # Clear colour
 
     @staticmethod
-    def fromimage(image, multicore=False):
+    def fromimage(image, multicore=False, clusterlevel=2):
         """Generate an :class:`NJANet` object from an image or path.
 
         This function loads, skeletonises, finds nodes, directions and edges, then cleans them. It is intended as a
@@ -863,6 +865,7 @@ class NJANet:
         Args:
             image (numpy.array or str): An image or a path to an image to load.
             multicore (bool): Use multicore path tracing. This scales much better for large or dense images.
+            clusterlevel (int): The threshold distance for each jump of the traversal. Defaults to 2. Does not attempt to cluster if argument is <=0.
 
         Returns:
             :class:`NJANet`
@@ -877,13 +880,17 @@ class NJANet:
         net = NJANet(image)
         net = net.skeletonize().find_nodes()
         net = net.find_directions()
+        
         if multicore:
             net = net.trace_paths_multicore()
         else:
             net = net.trace_paths()
+            
         net = net.clean_edges()
-        # net = net.link_nodes_to_edges()   # Probably don't need to do this as clean_edges should already link.
-        #         net = net.cluster_close_nodes()
+        
+        if clusterlevel > 0:
+            net = net.cluster_close_nodes(clusterlevel)
+        
         return net
 
     def plot(self, plotoriginal=False):
