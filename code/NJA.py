@@ -591,6 +591,10 @@ class NJANet:
             target (numpy.array): An optional target to be used instead of the highest-threshold centroid.
 
         """
+        # TODO: Add alt method by checking closeness centrality.
+        # Honestly if we add a method to generate a sparse csr_matrix we can hook into the following stuff easily:
+        # https://docs.scipy.org/doc/scipy/reference/sparse.csgraph.html
+        # https://scikit-image.org/docs/stable/api/skimage.graph.html#skimage.graph.central_pixel
         if self.contour_centroids is None:
             self.calculate_contour_centroids()
         if target is None:
@@ -849,7 +853,7 @@ class NJANet:
         print("\033[0m")   # Clear colour
 
     @staticmethod
-    def fromimage(image):
+    def fromimage(image, multicore=False):
         """Generate an :class:`NJANet` object from an image or path.
 
         This function loads, skeletonises, finds nodes, directions and edges, then cleans them. It is intended as a
@@ -858,6 +862,7 @@ class NJANet:
 
         Args:
             image (numpy.array or str): An image or a path to an image to load.
+            multicore (bool): Use multicore path tracing. This scales much better for large or dense images.
 
         Returns:
             :class:`NJANet`
@@ -872,7 +877,11 @@ class NJANet:
         net = NJANet(image)
         net = net.skeletonize().find_nodes()
         net = net.find_directions()
-        net = net.trace_paths().clean_edges()
+        if multicore:
+            net = net.trace_paths_multicore()
+        else:
+            net = net.trace_paths()
+        net = net.clean_edges()
         # net = net.link_nodes_to_edges()   # Probably don't need to do this as clean_edges should already link.
         #         net = net.cluster_close_nodes()
         return net
