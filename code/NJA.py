@@ -16,8 +16,15 @@ from copy import deepcopy
 from tqdm import tqdm
 import multiprocessing
 # from os import path
+from itertools import chain
+import warnings
+try:
+    import networkx as nx
+    netx_present = True
+except ImportError:
+    netx_present = False
 
-# TODO: Add docstrings for all methods and funcs
+# TODO: - Add docstrings for all methods and funcs
 
 
 # TODO: Document global dicts
@@ -31,6 +38,10 @@ dir_lookup = {x: [i] for i, x in enumerate(dirs) if x is not None}
 for x in dir_lookup:
     # print(x)
     dir_lookup[x] += [revdirs[dir_lookup[x][0]], 8 - dir_lookup[x][0], dir_deltas[dir_lookup[x][0]]]
+
+
+def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+    return ' %s:%s: %s:%s' % (filename, lineno, category.__name__, message)
 
 
 def get_3x3(image, y, x, flatten=False):
@@ -107,11 +118,11 @@ def detect_junc(image, y: int, x: int, flatten=False) -> tuple:
 
 def fmt_sm(submat, off="⬛", on="🟧", here="🟥"):
     """Format a 3x3 boolean submatrix using UTF-8 characters.
-    
+
     For example:\n
-    ⬛⬛⬛\n
-    🟧🟥⬛\n
-    ⬛🟧🟧
+    | ⬛⬛⬛
+    | 🟧🟥⬛
+    | ⬛🟧🟧
     
     Args:
         submat (numpy.array): the image to analyse.
@@ -129,7 +140,96 @@ def fmt_sm(submat, off="⬛", on="🟧", here="🟥"):
     return formatted
 
 
-def trace_path(startpoint, direction, skel, print_journey=False, return_journey=False):
+def predict_path(path_px, jump, lookback, nodes, curr_loc, start_loc):
+    """Predict a path where no pixels are present and attach to the first 1-node encountered.
+
+    This function derives a second order polynomial based on the last `lookback` pixels and then tries to predict `jump`
+    pixels ahead, drawing an ever wider buffer around itself as it goes. When a 1-node is reached this is considered to
+    be the endpoint of a new edge and the location is returned alongside the distance travelled. This distance is
+    approximate.
+
+    Args:
+        path_px (list): The pixels previously traversed prior to prediction.
+        jump (int or float): The number or proportion of pixels to try and predict forwards if you hit a dangling end.
+        lookback (int or float): The number or proportion of pixels to fit the prediction curve to.
+        nodes (dict of :class:`NJANode`): The nodes to check predictions against.
+        curr_loc (tuple): The current location from which prediction commences.
+        start_loc: The original location that path tracing commenced from.
+
+    Returns:
+        list or None: [found location tuple, distance travelled]
+
+    """
+    # Maybe make lookback be a percentage of path_px if it's between 0 and 1
+    # Same for jump
+    # print(f"Current location: {curr_loc}")
+    # Handle lookback and jump as proportions
+    if 0 < lookback < 1:
+        # print("lookback is float")
+        lookback = int(np.floor(len(path_px) * lookback))
+        # print(lookback)
+    if 0 < jump < 1:
+        # print("jump is float")
+        jump = int(np.floor(len(path_px) * jump))
+        # print(jump)
+    # Handle lookbacks that are too far by clamping to the max number of 2nd derivs
+    if lookback > len(path_px) - 2:
+        # print(f"Fixing lookback to {len(path_px) - 2}")
+        lookback = len(path_px) - 2
+
+    # If either jump or lookback are negative or have ended up at 0, we shouldn't try to do a predict.
+    if jump <= 0 or lookback <= 0:
+        # Catch very short lookbacks
+        return None
+
+    max_thresh = jump / 10
+    max_thresh = 30  # FIXME: Just for now for testing. We need to find a way to parameterise this somehow
+    # For now make a copy of nodes that doesn't include the current location, this might be slow but I think it's fine tbh
+    # potential_nodes = {k: v for k, v in nodes.items() if k not in {tuple(curr_loc), tuple(start_loc)}}
+    potential_nodes = {k: v for k, v in nodes.items()
+                       if k not in {tuple(curr_loc), tuple(start_loc)}  # Filter starting and last nodes
+                       if np.linalg.norm(v.position - curr_loc, ord=2) < (jump + max_thresh)}  # Prefilter potential nodes to max reachable
+    potential_nodes_keys = list(potential_nodes.keys())
+
+    found = None
+
+    if len(potential_nodes) > 0:
+        # Try to predict a path and see where it lands
+        prevpath = np.asarray(path_px)
+        ys, xs = prevpath.T
+        prevpath_derivs1 = prevpath.T[:, 1:] - prevpath.T[:, :-1]
+        prevpath_derivs2 = prevpath_derivs1[:, 1:] - prevpath_derivs1[:, :-1]
+        if len(prevpath_derivs2) > 0:
+            y_d2, x_d2 = np.mean(prevpath_derivs2[:, -lookback:], axis=1)
+        else:
+            y_d2 = x_d2 = 0
+        # Maybe works better using the mean 1st deriv rather than the last one? This is probably something with no right answer
+        derivdeltas_y = (np.arange(1, jump + 1) * y_d2) + np.mean(prevpath_derivs1[0, -lookback:])
+        derivdeltas_x = (np.arange(1, jump + 1) * x_d2) + np.mean(prevpath_derivs1[1, -lookback:])
+        # derivdeltas_y = (np.arange(1, jump+1) * y_d2) + prevpath_derivs1[0, -1]
+        # derivdeltas_x = (np.arange(1, jump + 1) * x_d2) + prevpath_derivs1[1, -1]
+        yout = np.cumsum(np.append(prevpath.T[0, -1], derivdeltas_y))
+        xout = np.cumsum(np.append(prevpath.T[1, -1], derivdeltas_x))
+        # np.rint rounds to the nearest int
+        predicted_locations = np.array([np.rint(yout[1:]).astype(int), np.rint(xout[1:]).astype(int)]).T
+
+        for step, loc in enumerate(predicted_locations):
+            thresh = ((step+1) / jump) * max_thresh
+            # print(f"{step+1} / {jump} * {max_thresh} = {thresh}")
+            node_distances = np.linalg.norm(np.array([x.position for x in potential_nodes.values()]) - loc, ord=2, axis=1)
+            final_node_shortlist = {potential_nodes_keys[i]: v for i, v in enumerate(node_distances) if v <= thresh}
+            if len(final_node_shortlist) > 0:
+                # print(f"step {step}: {loc}")
+                found = sorted(final_node_shortlist.items(), key=lambda x:x[1])[0]
+                # For now let's just assume that found's distance should be step + 1 + distance
+                # The +1 is because step is indexed from 0
+                found = [found[0], found[1] + step + 1]
+                # print(found)
+
+    return found
+
+
+def trace_path(startpoint, direction, skel, nodes=None, jump=10, lookback=10, print_journey=False, return_journey=False):
     """Trace the path between two junctions over a skeletonised image.
 
     Traces the path from a starting point on a skeletonised image along white pixels starting in a given direction until
@@ -141,12 +241,16 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
         direction (str): The direction to leave the starting pixel (captialised cardinal or ordinal directions,
             i.e. "N" or "SW").
         skel (numpy.array): Skeletonised image to traverse.
+        nodes (dict or None): The dictionary of net nodes as :class:`NJANode` instances (used for prediction, ignore to turn off prediction).
+        jump (int or float): The number or proportion of pixels to try and predict forwards if you hit a dangling end.
+        lookback (int or float): The number or proportion of pixels to fit the prediction curve to.
         print_journey (bool): Whether to print the journey taken to the console. Defaults to False.
         return_journey (bool): Whether to return the journey taken. Defaults to False.
 
     Returns:
         tuple: (endpoint, path length, [optionally, an array of the locations traversed during the trace]).
         """
+
     if print_journey:
         print(fmt_sm(startpoint[1]))
     # Init tracking set of places we've been
@@ -155,6 +259,7 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
     previously_visited.add(str(curr_loc))
     path_px = [deepcopy(curr_loc)]
     pathlength = 0
+    predicted = None
     while True:
         #         print(previously_visited)
         # Traverse to next loc
@@ -173,14 +278,22 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
             pathlength += np.sqrt(2)
         previously_visited.add(str(curr_loc))
         path_px.append(deepcopy(curr_loc))
+        # path_px = np.dstack((path_px, deepcopy(curr_loc)))
         # Test to see if junc
         curr_mat, curr_juncs = detect_junc(skel, *curr_loc)
         if print_journey:
             print(f"\n{direction} to {curr_loc} with {curr_juncs} juncs.\n")
             print(fmt_sm(curr_mat))
-        if curr_juncs != 2:
+        if curr_juncs > 2:
             # If so, return location and length of path
             break
+        elif curr_juncs == 1:
+            # Here we drop into the predictor, this will need to return the place we found a node (or None)
+            # alongside the path length travelled to get there and the direction currently travelling in
+            if jump and (nodes is not None):
+                predicted = predict_path(path_px, jump, lookback, nodes, curr_loc, path_px[0])
+            break
+
         # If not
         # Find next loc (by removing inverse of direction from submat and finding the only True location)
         invdirdetails = dir_lookup[dirdetails[1]]
@@ -202,9 +315,9 @@ def trace_path(startpoint, direction, skel, print_journey=False, return_journey=
         print("Done!\n\n Final Path")
         print(np.asarray(path_px))
     if return_journey:
-        return curr_loc, pathlength, np.asarray(path_px)
+        return curr_loc, pathlength, np.asarray(path_px), predicted
     else:
-        return curr_loc, pathlength
+        return curr_loc, pathlength, predicted
 
 
 def breadth_first(uid, candidates, net, threshold=2, timeout=100):
@@ -296,7 +409,9 @@ class NJANode:
         return f"{self.__class__.__name__}({self.position}, {self.uid}, {self.surround}, {self.juncs}, {self.dirs})"
 
     def __str__(self):
-        return f"UID:{self.uid}\n{self.__class__.__name__} @ {self.position}\nSurround:\n{self.format_surround(self.surround)}\nJunctions:{self.juncs}\nDirections:{self.dirs})"
+        # FIXME: Format surround seems broken for some odd reason, need to investigate
+        # return f"UID:{self.uid}\n{self.__class__.__name__} @ {self.position}\nSurround:\n{self.format_surround(self.surround)}\nJunctions:{self.juncs}\nDirections:{self.dirs})"
+        return f"UID:{self.uid}\n{self.__class__.__name__} @ {self.position}\nSurround:\n{self.surround}\nJunctions:{self.juncs}\nDirections:{self.dirs})"
 
     @property
     def flipped_position(self):
@@ -331,6 +446,11 @@ class NJANode:
         """A convenience wrapper around :func:`fmt_sm`.
         """
         return fmt_sm(self.surround, off, on, here)
+
+    def to_networkx_format(self):
+        """Export a node in networkx format"""
+        attrdict = {"position": self.position, "surround": self.surround, "juncs": self.juncs, "dirs": self.dirs}
+        return tuple([self.uid, attrdict])
 
 
 class NJAEdge:
@@ -462,6 +582,13 @@ class NJAEdge:
         """Convenience wrapper around :meth:`NJAEdge.format_journey`"""
         print(self.format_journey())
 
+    def to_networkx_format(self, weighted=False):
+        """Export an edge in networkx format"""
+        attrdict = {"pixel_length": self.pixel_length, "direct_length": self.direct_length}
+        if weighted:
+            attrdict["weight"] = self.pixel_length
+        return tuple([self.start.uid, self.end.uid, attrdict])
+
 
 class NJANet:
     """The full NJA Network object.
@@ -486,6 +613,7 @@ class NJANet:
         basenode (:class:`NJANode`): The calculated node closest to the estimated base of the tree, populated by :meth:`NJANet.find_basenode`.
         nodes (dict of :class:`NJANode` objects): The nodes of the network in the form `{uid: NJANode}`.
         edges (dict of :class:`NJAEdge` objects): The edges of the network in the form `{uid: NJAEdge}`.
+        incorrect_1nodes (dict of :class:`NJANode` objects): Nodes with 1 junc and more than 1 connected edge, in the form `{uid: NJANode}`.
     """
     def __init__(self, image):
         self.image = image
@@ -496,6 +624,7 @@ class NJANet:
         self.basenode = None
         self.nodes = {}
         self.edges = {}
+        self.incorrect_1nodes = {}
 
     def __str__(self):
         return f"{self.__class__.__name__}\nNodes: {len(self.nodes)}\nEdges: {len(self.edges)}"
@@ -609,8 +738,26 @@ class NJANet:
         """numpy.array: The distances of all 1-nodes from the basenode."""
         return np.linalg.norm(np.array([x.position for x in self.nodes.values() if x.juncs == 1]) - self.basenode.position, ord=2, axis=1)
 
-    def trace_paths(self):
+    @property
+    def density(self):
+        """float: The graph density of the network.
+
+        Calculated as the ratio of edges to total possible edges in the graph. 1 is fully complete and
+        0 is fully isolated.
+        """
+        n = len(self.nodes)
+        e = len(self.edges)
+        return (2 * e) / (n * (n-1))
+
+    def trace_paths(self, try_predict=False, jump=10, lookback=10):
         """Trace paths to find edges between all nodes based upon the node directions and :attr:`NJANet.skel`.
+
+        Args:
+            try_predict (bool): Try to predict forward and rejoin the path if a gap is detected.
+            jump (int or float): Amount to try to jump forward when predicting, either as a number of pixels or as a
+                proportion of the length of the path prior to predicting.
+            lookback (int or float): Amount to look back to determine the second derivative of the path, either as a
+                number of pixels or as a proportion of the length of the path prior to predicting.
         """
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
         # outlist = []
@@ -619,10 +766,28 @@ class NJANet:
             # Loop through output directions
             for y in x.dirs:
                 try:
-                    traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, return_journey=True)
+                    if try_predict:
+                        traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, self.nodes, jump=jump, lookback=lookback, return_journey=True)
+                    else:
+                        # Provide None as the nodes argument to skip predictions
+                        traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, None, jump=jump, lookback=lookback, return_journey=True)
                     yuid = tuple(traceout[0])
+                    # TODO: Also check whether clean_edges nicely checks for and removes 2-node bits
+                    #  - To do this, predict_path must return either None or the node it predicted to
+                    #  - Then trace_path must return both the original join to the 1-node and the predicted join + length
+                    #  - Finally trace_paths must add both the traced edge and the predicted edge to the edgelist and
+                    #  note down any nodes that were 1-nodes for checking later
+                    #  - Eventually a 1-node-on-line checker needs to find these 1-nodes that are actually 2-nodes and
+                    #  iteratively reassign the connected edges.
+                    #  note: all 1-nodes with more than 1 edge assigned MUST be removeable, though this needs to be done in a While loop.
+
                     self.edges[x.uid + yuid] = NJAEdge(x, self.nodes[yuid], uid=x.uid + yuid, pixel_length=traceout[1],
                                                        direct_length=None, path=traceout[2])
+                    if traceout[-1] is not None:
+                        # TODO: Link the 1-node we ended at to the node we predicted to with an appropriate length
+                        yuid2 = tuple(traceout[-1][0])
+                        self.edges[yuid + yuid2] = NJAEdge(self.nodes[yuid], self.nodes[yuid2], uid=yuid + yuid2,
+                                                           pixel_length=traceout[-1][1], direct_length=None, path=None)
                 except ValueError as e:
                     # Honestly cycles don't matter
                     #                     print(str(e))
@@ -643,15 +808,26 @@ class NJANet:
         except ValueError:
             return None
 
-    def trace_paths_multicore(self):
+    def trace_paths_multicore(self, try_predict=False, jump=10, lookback=10):
         """Multicore implementation of :meth:`NJANet.trace_paths`, find all edges in the network based upon :attr:`NJANet.skel`.
 
         This is about 50% faster than the single-core implementation, but the difference is measurable in ms.
+
+        Args:
+            try_predict (bool): Try to predict forward and rejoin the path if a gap is detected.
+            jump (int or float): Amount to try to jump forward when predicting, either as a number of pixels or as a
+                proportion of the length of the path prior to predicting.
+            lookback (int or float): Amount to look back to determine the second derivative of the path, either as a
+                number of pixels or as a proportion of the length of the path prior to predicting.
         """
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
         cpus = multiprocessing.cpu_count() - 1
 
-        var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel] for x in self.nodes.values() for y in x.dirs]
+        # raise NotImplementedError("Multicore tracing is disabled until new trace_paths() logic is implemented. Use that instead.")
+        if try_predict:
+            var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel, self.nodes, jump, lookback] for x in self.nodes.values() for y in x.dirs]
+        else:
+            var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel, None, jump, lookback] for x in self.nodes.values() for y in x.dirs]
         chunksize = int(np.ceil(len(var_list) / cpus))
         # print(chunksize)
         chunksize = None
@@ -671,6 +847,10 @@ class NJANet:
             yuid = tuple(traceout[0])
             self.edges[xuid + yuid] = NJAEdge(self.nodes[xuid], self.nodes[yuid], uid=xuid + yuid,
                                               pixel_length=traceout[1], direct_length=None, path=traceout[2])
+            if traceout[-1] is not None:
+                yuid2 = tuple(traceout[-1][0])
+                self.edges[yuid + yuid2] = NJAEdge(self.nodes[yuid], self.nodes[yuid2], uid=yuid + yuid2,
+                                                   pixel_length=traceout[-1][1], direct_length=None, path=None)
         return self
 
     def clean_edges(self, regenuids=False, purge=False):
@@ -716,6 +896,68 @@ class NJANet:
             edge.end.connected_edges[edge.uid] = edge
         return self
 
+    def find_incorrect_1nodes(self):
+        """Populate and return :attr:`NJANet.incorrect_1nodes`; the dict of all nodes with 1 junc and more than 1
+        connected edge. Note that this forces a rerun of :meth:`NJANet.link_nodes_to_edges`.
+
+        Returns:
+            dict of :class:`NJANode` objects: Nodes with 1 junc and more than 1 connected edge, in the form `{uid: NJANode}`.
+
+        """
+        self.link_nodes_to_edges(purge=True)
+        self.incorrect_1nodes = {k: v for k, v in self.nodes.items() if v.juncs == 1 if len(v.connected_edges) > 1}
+        return self.incorrect_1nodes
+
+    def resolve_incorrect_1nodes(self):
+        """Iteratively resolve incorrect 1-nodes, removing any that are now 2-nodes and replacing them with a single
+        edge of equivalent length.
+        """
+        timeout = 1000
+        original_timeout = timeout
+        # Make sure nodes and edges are linked
+        self.link_nodes_to_edges(purge=True)
+        while len(self.find_incorrect_1nodes()) > 0:
+            # print(len(self.incorrect_1nodes))
+            # Try to remove 1-nodes
+            # Get next node and value to remove
+            k = next(iter(self.incorrect_1nodes))
+            v = self.incorrect_1nodes[k]
+            # If len of connected_edges is > 2, mark as a true junc now
+            if len(v.connected_edges) > 2:
+                v.juncs = len(v.connected_edges)
+            else:
+                # Else try to remove (these will always have 2 edges connected.
+                # Get edges connected to node k
+                edges_to_purge = set()
+                nodes_to_purge = set()
+                v_e1_uid, v_e2_uid = v.connected_edge_uids
+                v_e1 = self.edges[v_e1_uid]
+                v_e2 = self.edges[v_e2_uid]
+                # Find the two other nodes to connect together
+                new_edge_node_uids = tuple(set(v_e1.connected_node_uids).symmetric_difference(set(v_e2.connected_node_uids)))
+                new_nodes = self.get_nodes_by_uid(new_edge_node_uids)
+                # Calc new edge distance
+                new_edgelength = v_e1.pixel_length + v_e2.pixel_length
+
+                # Create new edge and add to edges
+                new_edge = NJAEdge(*new_nodes, pixel_length=new_edgelength)
+                self.edges[new_edge.uid] = new_edge
+
+                # Purge edges and nodes
+                edges_to_purge.update(v.connected_edge_uids)
+                nodes_to_purge.add(k)
+                # print(k)
+                # print(v.connected_edge_uids)
+                self.remove_edges_by_uid(v.connected_edge_uids)
+                self.remove_nodes_by_uid(k)
+            # Just make sure we're not infinitely looping
+            # Might be worth instead keeping a list of the last 5 lengths of incorrect_1nodes and then checking if they're all the same.
+            timeout -= 1
+            if timeout < 1:
+                raise RuntimeError('%i iterations performed and there are still %i incorrect 1-nodes!' % (original_timeout, len(self.incorrect_1nodes)))
+        self.clean_edges(regenuids=True, purge=True)
+        return self
+
     def remove_edges_by_uid(self, uids):
         """Remove edges from :attr:`NJANet.edges` by uid.
 
@@ -723,8 +965,10 @@ class NJANet:
             uids (iterable of tuples): The uids of the edges to remove.
         """
         if len(uids) == 4:
-            if all([isinstance(x, int) for x in uids]):
-                uids = [uids]
+            if all([isinstance(x, int) for x in uids]) or all([np.issubdtype(x, np.integer) for x in uids]):
+                uids = tuple(uids)
+                del self.edges[uids]
+                return self
         for uid in uids:
             del self.edges[uid]
         return self
@@ -736,11 +980,29 @@ class NJANet:
             uids (iterable of tuples): The uids of the nodes to remove.
         """
         if len(uids) == 2:
-            if all([isinstance(x, int) for x in uids]):
-                uids = [uids]
+            if all([isinstance(x, int) for x in uids]) or all([np.issubdtype(x, np.integer) for x in uids]):
+                uids = tuple(uids)
+                del self.nodes[uids]
+                return self
         for uid in uids:
             del self.nodes[uid]
         return self
+
+    def get_nodes_by_uid(self, uids):
+        """Get nodes from :attr:`NJANet.nodes` by uid.
+
+        Args:
+            uids (iterable of tuples): The uids of the nodes to get.
+
+        Returns:
+            list of :class:`NJANode` objects: The requested nodes.
+        """
+        if len(uids) == 2:
+            if all([isinstance(x, int) for x in uids]) or all([np.issubdtype(x, np.integer) for x in uids]):
+                # Extra condition allows for arrays of np.int64s to be provided and caught
+                uids = tuple(uids)
+                return self.nodes[uids]
+        return [self.nodes[uid] for uid in uids]
 
     def cluster_close_nodes(self, threshold=2, timeout=100):
         """Cluster and identify close-together nodes based upon a threshold edge distance.
@@ -855,7 +1117,7 @@ class NJANet:
         print("\033[0m")   # Clear colour
 
     @staticmethod
-    def fromimage(image, multicore=False, clusterlevel=2):
+    def fromimage(image, multicore=False, clusterlevel=2, try_predict=False, jump=10, lookback=10):
         """Generate an :class:`NJANet` object from an image or path.
 
         This function loads, skeletonises, finds nodes, directions and edges, then cleans them. It is intended as a
@@ -866,6 +1128,11 @@ class NJANet:
             image (numpy.array or str): An image or a path to an image to load.
             multicore (bool): Use multicore path tracing. This scales much better for large or dense images.
             clusterlevel (int): The threshold distance for each jump of the traversal. Defaults to 2. Does not attempt to cluster if argument is <=0.
+            try_predict (bool): Try to predict forward and rejoin the path if a gap is detected.
+            jump (int or float): Amount to try to jump forward when predicting, either as a number of pixels or as a
+                proportion of the length of the path prior to predicting.
+            lookback (int or float): Amount to look back to determine the second derivative of the path, either as a
+                number of pixels or as a proportion of the length of the path prior to predicting.
 
         Returns:
             :class:`NJANet`
@@ -882,9 +1149,9 @@ class NJANet:
         net = net.find_directions()
         
         if multicore:
-            net = net.trace_paths_multicore()
+            net = net.trace_paths_multicore(try_predict, jump, lookback)
         else:
-            net = net.trace_paths()
+            net = net.trace_paths(try_predict, jump, lookback)
             
         net = net.clean_edges()
         
@@ -892,6 +1159,55 @@ class NJANet:
             net = net.cluster_close_nodes(clusterlevel)
         
         return net
+
+    def to_networkx_format(self, weighted=False, listformat=False):
+        """Export the NJA network to either a list of edge/nodelists or a networkx Graph object.
+
+        Note:
+            In the case that `networkx` is not installed, this will always return the list object.
+
+        Args:
+            weighted (bool): Include pixel_distance as the weight attribute for use in networkx analysis.
+            listformat (bool): Force return of the list of lists.
+
+        Returns:
+            `networkx.Graph` or list: The network in the chosen representation.
+        """
+        if listformat is False:
+            if netx_present:
+                g = nx.Graph()
+                g.add_nodes_from(self.nodes_to_nodelist())
+                g.add_edges_from(self.edges_to_edgelist(weighted), weight=3)
+                return g
+            else:
+                # Force warnings to exclude stacktrace
+                old_formatwarning = warnings.formatwarning
+                warnings.formatwarning = _warning_on_one_line
+                warnings.warn("networkx package not detected, defaulting to dict format.", Warning)
+                # Reset warnings just in case
+                warnings.formatwarning = old_formatwarning
+
+        return [self.nodes_to_nodelist(), self.edges_to_edgelist(weighted)]
+
+    def nodes_to_nodelist(self):
+        """Export all nodes as a list of lists in the format `[[uid, {attrs}],...]`
+
+        Returns:
+            list: The nodelist as specified in the `Graph.add_edges_from()` function from `networkx`."""
+        return [n.to_networkx_format() for n in self.nodes.values()]
+
+    def edges_to_edgelist(self, weighted=False):
+        """Export all edges as a list of lists in the format `[[startuid, enduid, {attrs}],...]`
+
+        Args:
+            weighted (bool): Include pixel_distance as the weight attribute for use in networkx analysis.
+
+        Returns:
+            list: The edgelist as specified in the `Graph.add_edges_from()` function from `networkx`."""
+        return [e.to_networkx_format(weighted) for e in self.edges.values()]
+
+    def networkx_node_positions(self):
+        return {n.uid: n.flipped_position for n in self.nodes.values()}
 
     def plot(self, plotoriginal=False):
         """Plot the :class:`NJANet` object.
@@ -916,8 +1232,7 @@ class NJANet:
         plt.show()
 
     def plot_with_pixeldensity(self):
-        """Plot the :class:`NJANet` object alongside the vertical density of pixels line-by-line.
-        """
+        """Plot the :class:`NJANet` object alongside the vertical density of pixels line-by-line."""
         gridsize = (1, 7)
         fig = plt.figure(figsize=(18, 10))
         ax0 = plt.subplot2grid(gridsize, (0, 0), colspan=6, rowspan=1)
@@ -935,8 +1250,7 @@ class NJANet:
         plt.show()
 
     def plot_with_nodedensity(self):
-        """Plot the :class:`NJANet` object alongside the vertical density of nodes line-by-line.
-        """
+        """Plot the :class:`NJANet` object alongside the vertical density of nodes line-by-line."""
         gridsize = (1, 7)
         fig = plt.figure(figsize=(18, 10))
         ax0 = plt.subplot2grid(gridsize, (0, 0), colspan=6, rowspan=1)
