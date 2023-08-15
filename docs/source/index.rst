@@ -13,6 +13,7 @@ NJA
    :maxdepth: 2
    :caption: Contents:
    
+   tutorial
    NJA
 
 Stuff is here
