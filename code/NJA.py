@@ -625,6 +625,7 @@ class NJANet:
         self.nodes = {}
         self.edges = {}
         self.incorrect_1nodes = {}
+        self._nodes_ever_linked = False
 
     def __str__(self):
         return f"{self.__class__.__name__}\nNodes: {len(self.nodes)}\nEdges: {len(self.edges)}"
@@ -772,19 +773,9 @@ class NJANet:
                         # Provide None as the nodes argument to skip predictions
                         traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, None, jump=jump, lookback=lookback, return_journey=True)
                     yuid = tuple(traceout[0])
-                    # TODO: Also check whether clean_edges nicely checks for and removes 2-node bits
-                    #  - To do this, predict_path must return either None or the node it predicted to
-                    #  - Then trace_path must return both the original join to the 1-node and the predicted join + length
-                    #  - Finally trace_paths must add both the traced edge and the predicted edge to the edgelist and
-                    #  note down any nodes that were 1-nodes for checking later
-                    #  - Eventually a 1-node-on-line checker needs to find these 1-nodes that are actually 2-nodes and
-                    #  iteratively reassign the connected edges.
-                    #  note: all 1-nodes with more than 1 edge assigned MUST be removeable, though this needs to be done in a While loop.
-
                     self.edges[x.uid + yuid] = NJAEdge(x, self.nodes[yuid], uid=x.uid + yuid, pixel_length=traceout[1],
                                                        direct_length=None, path=traceout[2])
                     if traceout[-1] is not None:
-                        # TODO: Link the 1-node we ended at to the node we predicted to with an appropriate length
                         yuid2 = tuple(traceout[-1][0])
                         self.edges[yuid + yuid2] = NJAEdge(self.nodes[yuid], self.nodes[yuid2], uid=yuid + yuid2,
                                                            pixel_length=traceout[-1][1], direct_length=None, path=None)
@@ -894,6 +885,7 @@ class NJANet:
         for edge in self.edges.values():
             edge.start.connected_edges[edge.uid] = edge
             edge.end.connected_edges[edge.uid] = edge
+        self._nodes_ever_linked = True
         return self
 
     def find_incorrect_1nodes(self):
@@ -1013,11 +1005,6 @@ class NJANet:
         
         This method can be run repeatedly, but will only have an effect if the threshold is increased between runs.
 
-        Warning:
-             Will only function correctly after :meth:`NJANet.link_nodes_to_edges` is executed, otherwise will cluster
-             no nodes on the first try. If run again it will succeed due to this function calling the linker as part
-             of its routine.
-
         Args:
             threshold (int): The threshold distance for each jump of the traversal. Defaults to 2.
             timeout (int) : The number of jumps to take before abandoning a search. Defaults to 100.
@@ -1041,7 +1028,8 @@ class NJANet:
             #             print(f"Done in {len(grouped_candidates)} runs")
             pass
 
-        # TODO: Maybe check here to see if linked nodes has actually been run.
+        if self._nodes_ever_linked is False:
+            self.link_nodes_to_edges()
 
         final_clusters = {}
         for x in grouped_candidates:
