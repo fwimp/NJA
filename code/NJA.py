@@ -140,7 +140,7 @@ def fmt_sm(submat, off="⬛", on="🟧", here="🟥"):
     return formatted
 
 
-def predict_path(path_px, jump, lookback, nodes, curr_loc, start_loc):
+def predict_path(path_px, jump, lookback, max_thresh, nodes, curr_loc, start_loc):
     """Predict a path where no pixels are present and attach to the first 1-node encountered.
 
     This function derives a second order polynomial based on the last `lookback` pixels and then tries to predict `jump`
@@ -172,18 +172,23 @@ def predict_path(path_px, jump, lookback, nodes, curr_loc, start_loc):
         # print("jump is float")
         jump = int(np.floor(len(path_px) * jump))
         # print(jump)
+
+    if 0 < max_thresh < 1:
+        # print("jump is float")
+        thresh = int(np.floor(len(path_px) * max_thresh))
+        # print(jump)
+
     # Handle lookbacks that are too far by clamping to the max number of 2nd derivs
     if lookback > len(path_px) - 2:
         # print(f"Fixing lookback to {len(path_px) - 2}")
         lookback = len(path_px) - 2
 
     # If either jump or lookback are negative or have ended up at 0, we shouldn't try to do a predict.
-    if jump <= 0 or lookback <= 0:
+    if jump <= 0 or lookback <= 0 or max_thresh < 0:
         # Catch very short lookbacks
         return None
 
-    max_thresh = jump / 10
-    max_thresh = 30  # FIXME: Just for now for testing. We need to find a way to parameterise this somehow
+    # max_thresh = 30  # FIXME: Just for now for testing. We need to find a way to parameterise this somehow
     # For now make a copy of nodes that doesn't include the current location, this might be slow but I think it's fine tbh
     # potential_nodes = {k: v for k, v in nodes.items() if k not in {tuple(curr_loc), tuple(start_loc)}}
     potential_nodes = {k: v for k, v in nodes.items()
@@ -229,7 +234,7 @@ def predict_path(path_px, jump, lookback, nodes, curr_loc, start_loc):
     return found
 
 
-def trace_path(startpoint, direction, skel, nodes=None, jump=10, lookback=10, print_journey=False, return_journey=False):
+def trace_path(startpoint, direction, skel, nodes=None, jump=10, lookback=10, max_thresh=30, print_journey=False, return_journey=False):
     """Trace the path between two junctions over a skeletonised image.
 
     Traces the path from a starting point on a skeletonised image along white pixels starting in a given direction until
@@ -244,6 +249,8 @@ def trace_path(startpoint, direction, skel, nodes=None, jump=10, lookback=10, pr
         nodes (dict or None): The dictionary of net nodes as :class:`NJANode` instances (used for prediction, ignore to turn off prediction).
         jump (int or float): The number or proportion of pixels to try and predict forwards if you hit a dangling end.
         lookback (int or float): The number or proportion of pixels to fit the prediction curve to.
+        max_thresh (int or float): The maximum distance from a point in the predicted line that a node is considered to
+            be detected. This scales with the distance along the predicted line in the form `(curr_distance/jump)*thresh`.
         print_journey (bool): Whether to print the journey taken to the console. Defaults to False.
         return_journey (bool): Whether to return the journey taken. Defaults to False.
 
@@ -291,7 +298,7 @@ def trace_path(startpoint, direction, skel, nodes=None, jump=10, lookback=10, pr
             # Here we drop into the predictor, this will need to return the place we found a node (or None)
             # alongside the path length travelled to get there and the direction currently travelling in
             if jump and (nodes is not None):
-                predicted = predict_path(path_px, jump, lookback, nodes, curr_loc, path_px[0])
+                predicted = predict_path(path_px, jump, lookback, max_thresh, nodes, curr_loc, path_px[0])
             break
 
         # If not
@@ -750,7 +757,7 @@ class NJANet:
         e = len(self.edges)
         return (2 * e) / (n * (n-1))
 
-    def trace_paths(self, try_predict=False, jump=10, lookback=10):
+    def trace_paths(self, try_predict=False, jump=10, lookback=10, max_thresh=30):
         """Trace paths to find edges between all nodes based upon the node directions and :attr:`NJANet.skel`.
 
         Args:
@@ -759,19 +766,24 @@ class NJANet:
                 proportion of the length of the path prior to predicting.
             lookback (int or float): Amount to look back to determine the second derivative of the path, either as a
                 number of pixels or as a proportion of the length of the path prior to predicting.
+            max_thresh (int or float): The maximum distance from a point in the predicted line that a node is considered
+                to be detected. This scales with the distance along the predicted line in the form
+                `(curr_distance/jump)*thresh`.
         """
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
         # outlist = []
+        if len(self.edges) > 0:
+            raise AttributeError("Paths have already been traced, please re-generate the NJANet if you would like to try different parameters.")
         traceout = None
         for x in tqdm(self.nodes.values(), bar_format="Tracing Paths: {l_bar}{bar}{r_bar}"):
             # Loop through output directions
             for y in x.dirs:
                 try:
                     if try_predict:
-                        traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, self.nodes, jump=jump, lookback=lookback, return_journey=True)
+                        traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, self.nodes, jump=jump, lookback=lookback, max_thresh=max_thresh, return_journey=True)
                     else:
                         # Provide None as the nodes argument to skip predictions
-                        traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, None, jump=jump, lookback=lookback, return_journey=True)
+                        traceout = trace_path([x.position, x.surround, x.juncs, None], y, self.skel, None, return_journey=True)
                     yuid = tuple(traceout[0])
                     self.edges[x.uid + yuid] = NJAEdge(x, self.nodes[yuid], uid=x.uid + yuid, pixel_length=traceout[1],
                                                        direct_length=None, path=traceout[2])
@@ -799,7 +811,7 @@ class NJANet:
         except ValueError:
             return None
 
-    def trace_paths_multicore(self, try_predict=False, jump=10, lookback=10):
+    def trace_paths_multicore(self, try_predict=False, jump=10, lookback=10, max_thresh=30):
         """Multicore implementation of :meth:`NJANet.trace_paths`, find all edges in the network based upon :attr:`NJANet.skel`.
 
         This is about 50% faster than the single-core implementation, but the difference is measurable in ms.
@@ -810,15 +822,20 @@ class NJANet:
                 proportion of the length of the path prior to predicting.
             lookback (int or float): Amount to look back to determine the second derivative of the path, either as a
                 number of pixels or as a proportion of the length of the path prior to predicting.
+            max_thresh (int or float): The maximum distance from a point in the predicted line that a node is considered
+                to be detected. This scales with the distance along the predicted line in the form
+                `(curr_distance/jump)*thresh`.
         """
+        if len(self.edges) > 0:
+            raise AttributeError("Paths have already been traced, please re-generate the NJANet if you would like to try different parameters.")
+
         # This is slightly less consistent than doing it all in one LC, but way easier to debug
         cpus = multiprocessing.cpu_count() - 1
 
-        # raise NotImplementedError("Multicore tracing is disabled until new trace_paths() logic is implemented. Use that instead.")
         if try_predict:
-            var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel, self.nodes, jump, lookback] for x in self.nodes.values() for y in x.dirs]
+            var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel, self.nodes, jump, lookback, max_thresh] for x in self.nodes.values() for y in x.dirs]
         else:
-            var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel, None, jump, lookback] for x in self.nodes.values() for y in x.dirs]
+            var_list = [[x.uid, [x.position, x.surround, x.juncs, None], y, self.skel, None] for x in self.nodes.values() for y in x.dirs]
         chunksize = int(np.ceil(len(var_list) / cpus))
         # print(chunksize)
         chunksize = None
@@ -1105,7 +1122,7 @@ class NJANet:
         print("\033[0m")   # Clear colour
 
     @staticmethod
-    def fromimage(image, multicore=False, clusterlevel=2, try_predict=False, jump=10, lookback=10):
+    def fromimage(image, multicore=False, clusterlevel=2, try_predict=False, jump=10, lookback=10, max_thresh=30):
         """Generate an :class:`NJANet` object from an image or path.
 
         This function loads, skeletonises, finds nodes, directions and edges, then cleans them. It is intended as a
@@ -1121,6 +1138,9 @@ class NJANet:
                 proportion of the length of the path prior to predicting.
             lookback (int or float): Amount to look back to determine the second derivative of the path, either as a
                 number of pixels or as a proportion of the length of the path prior to predicting.
+            max_thresh (int or float): The maximum distance from a point in the predicted line that a node is considered
+                to be detected. This scales with the distance along the predicted line in the form
+                `(curr_distance/jump)*thresh`.
 
         Returns:
             :class:`NJANet`
