@@ -24,10 +24,6 @@ try:
 except ImportError:
     netx_present = False
 
-# TODO: - Add docstrings for all methods and funcs
-
-
-# TODO: Document global dicts
 dirs = np.array(["NW", "N", "NE", "W", None, "E", "SW", "S", "SE"])
 """numpy.array: Lookup for possible directions based upon index in a flattened 3x3 matrix relative to (1,1) 
 """
@@ -188,7 +184,7 @@ def predict_path(path_px, jump, lookback, max_thresh, nodes, curr_loc, start_loc
         # Catch very short lookbacks
         return None
 
-    # max_thresh = 30  # FIXME: Just for now for testing. We need to find a way to parameterise this somehow
+    # max_thresh = 30  # TODO: Now controllable, though we should still provide some sensible default
     # For now make a copy of nodes that doesn't include the current location, this might be slow but I think it's fine tbh
     # potential_nodes = {k: v for k, v in nodes.items() if k not in {tuple(curr_loc), tuple(start_loc)}}
     potential_nodes = {k: v for k, v in nodes.items()
