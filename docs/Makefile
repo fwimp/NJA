@@ -9,7 +9,7 @@ SPHINXBUILD   ?= sphinx-build
 SPHINXAPIDOC  ?= sphinx-apidoc
 SOURCEDIR     = source
 BUILDDIR      = build
-CODEDIR       = ../code
+CODEDIR       = ../src
 
 # Put it first so that "make" without argument is like "make help".
 help:

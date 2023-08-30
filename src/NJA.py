@@ -1,23 +1,18 @@
-# import skimage as img
+import multiprocessing
+import warnings
+from copy import deepcopy
+
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
+import numpy as np
 import seaborn as sns
 import skimage.io as io
-from skimage.morphology import skeletonize, medial_axis
-# from skimage.filters import gaussian
+from matplotlib.collections import LineCollection
 from skimage.color import rgb2gray
 from skimage.filters import gaussian
 from skimage.measure import regionprops
-# from skimage.feature import corner_harris, corner_peaks
-# from scipy.spatial import KDTree
-# from skimage.segmentation import active_contour
-import numpy as np
-from copy import deepcopy
+from skimage.morphology import skeletonize
 from tqdm import tqdm
-import multiprocessing
-# from os import path
-from itertools import chain
-import warnings
+
 try:
     import networkx as nx
     netx_present = True

@@ -1,7 +1,7 @@
-code
-====
+src
+===
 
 .. toctree::
    :maxdepth: 4
 
-   NJA
+   src

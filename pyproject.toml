@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "NJA"
+description = "An image skeleton tracing and analysis package."
+version = "0.0.1"
+requires-python = ">=3.10"
+authors = [
+    { name="Francis Windram", email="francis.windram17@imperial.ac.uk" }
+]
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "scikit-image",
+    "numpy",
+    "matplotlib",
+    "seaborn",
+    "tqdm",
+    "networkx"
+]
