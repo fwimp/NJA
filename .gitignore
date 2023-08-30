@@ -4,3 +4,4 @@ docs/build
 *.BAK
 *.idea*
 dist
+*.egg-info/

@@ -1,3 +1,0 @@
-NJA
-__init__
-test

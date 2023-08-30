@@ -1,6 +1,0 @@
-scikit-image
-numpy
-matplotlib
-seaborn
-tqdm
-networkx

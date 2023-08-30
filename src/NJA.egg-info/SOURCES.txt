@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-src/NJA.py
-src/__init__.py
-src/NJA.egg-info/PKG-INFO
-src/NJA.egg-info/SOURCES.txt
-src/NJA.egg-info/dependency_links.txt
-src/NJA.egg-info/requires.txt
-src/NJA.egg-info/top_level.txt
